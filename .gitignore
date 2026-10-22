@@ -4,3 +4,7 @@ models/
 results/
 *.py[cod]
 openvino_webcam.json
+
+*.pyc
+
+.pytest_cache/
