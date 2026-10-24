@@ -17,7 +17,11 @@ AREA_NAME = "placeholder_area"
 
 # Matching settings
 MIN_MATCH_SCORE = 0.75   # similarity (0-1); candidates below this are dropped
-MAX_CANDIDATES = 5
+MAX_CANDIDATES = 5       # max distinct street names per cue
 
 # Geometry settings
 CLUSTER_GAP_M = 25       # same-named segments closer than this belong to one street piece
+
+# Output settings
+MAX_PIECES_TOTAL = 30    # max candidates returned per cue (output reports if it was truncated)
+AMBIGUITY_MARGIN = 0.05  # candidates within this score of the best count as competing
