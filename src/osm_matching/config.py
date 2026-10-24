@@ -15,6 +15,6 @@ AREA_RADIUS_M = 2500               # roughly a 5 km-wide area
 AREA_NAME = "placeholder_area"
 # -------------------------------------------------------------------------
 
-# Matching settings (used in later steps)
-MIN_MATCH_SCORE = 0.60   # candidates below this are dropped
+# Matching settings
+MIN_MATCH_SCORE = 0.75   # similarity (0-1); candidates below this are dropped
 MAX_CANDIDATES = 5
