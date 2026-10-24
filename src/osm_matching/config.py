@@ -18,3 +18,6 @@ AREA_NAME = "placeholder_area"
 # Matching settings
 MIN_MATCH_SCORE = 0.75   # similarity (0-1); candidates below this are dropped
 MAX_CANDIDATES = 5
+
+# Geometry settings
+CLUSTER_GAP_M = 25       # same-named segments closer than this belong to one street piece

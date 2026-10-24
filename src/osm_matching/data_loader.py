@@ -39,11 +39,35 @@ def _clean(edges):
     return edges[["osm_ids", "name", "highway", "length_m", "geometry"]].reset_index(drop=True)
 
 
+def _geom_key(geom):
+    """Direction-independent key for a line: A->B and B->A give the same key."""
+    try:
+        coords = tuple(geom.coords)
+    except NotImplementedError:      # multi-part geometry
+        return geom.wkb
+    return min(coords, tuple(reversed(coords)))
+
+
+def _dedupe(roads):
+    """Drop the reverse-direction copy OSMnx makes for two-way streets.
+
+    A row is a duplicate when the OSM way ids, the name and the line (in either
+    direction) are all identical. Different ways or different names are kept.
+    """
+    key = pd.DataFrame({
+        "ids": roads["osm_ids"].astype(str).values,
+        "name": roads["name"].fillna("").astype(str).values,
+        "geom": [_geom_key(g) for g in roads.geometry],
+    })
+    keep = ~key.duplicated().values
+    return roads.loc[keep].reset_index(drop=True)
+
+
 def load_roads(force_download=False):
     """Return a GeoDataFrame of road segments (EPSG:4326). Uses the cache if present."""
     path = _cache_path()
     if path.exists() and not force_download:
-        return gpd.read_file(path)
+        return _dedupe(gpd.read_file(path))
 
     print(f"Downloading OSM roads around {config.AREA_CENTER}, radius {config.AREA_RADIUS_M} m ...")
     graph = ox.graph_from_point(
@@ -53,7 +77,7 @@ def load_roads(force_download=False):
         simplify=True,
     )
     edges = ox.graph_to_gdfs(graph, nodes=False)
-    roads = _clean(edges)
+    roads = _dedupe(_clean(edges))
 
     config.OSM_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     roads.to_file(path, driver="GPKG")
