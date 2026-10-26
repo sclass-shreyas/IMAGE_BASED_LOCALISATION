@@ -9,3 +9,4 @@ openvino_webcam.json
 
 .pytest_cache/
 data/osm/*.gpkg
+/cache/
