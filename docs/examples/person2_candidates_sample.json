@@ -1,0 +1,1102 @@
+[
+  {
+    "timestamp_s": 1.0,
+    "query_text": "MG ROAD",
+    "normalized_text": "mg road",
+    "ocr_confidence": 0.91,
+    "ambiguous": true,
+    "n_candidates_total": 5,
+    "truncated": false,
+    "candidates": [
+      {
+        "candidate_id": "way/1196514128",
+        "name": "Mahatma Gandhi Road",
+        "osm_type": "way",
+        "osm_id": 1196514128,
+        "match_score": 1.0,
+        "match_type": "initials",
+        "representative_lat": 12.974456,
+        "representative_lon": 77.610584,
+        "same_name_pieces": 1,
+        "length_m": 4045.8,
+        "osm_way_ids": [
+          38522039,
+          147859357,
+          161416663,
+          263812623,
+          435249314,
+          544759837,
+          544759838,
+          638541495,
+          638541500,
+          763293422,
+          766406223,
+          824818261,
+          915684608,
+          1101271052,
+          1101945532,
+          1106110231,
+          1109956874,
+          1112419800,
+          1112419801,
+          1125542416,
+          1125542417,
+          1148434865,
+          1151679464,
+          1151681832,
+          1166322819,
+          1166322820,
+          1166322823,
+          1166322824,
+          1166571293,
+          1196514128,
+          1227562842,
+          1227562843,
+          1227562844,
+          1278555476,
+          1308654687,
+          1308654713,
+          1368125926
+        ],
+        "bbox": [
+          77.599195,
+          12.972849,
+          77.61749,
+          12.976704
+        ]
+      },
+      {
+        "candidate_id": "way/1308720281",
+        "name": "MG Road Boulevard",
+        "osm_type": "way",
+        "osm_id": 1308720281,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.976349,
+        "representative_lon": 77.603574,
+        "same_name_pieces": 1,
+        "length_m": 298.1,
+        "osm_way_ids": [
+          1296032741,
+          1308720281,
+          1308720282
+        ],
+        "bbox": [
+          77.601996,
+          12.976087,
+          77.604662,
+          12.976725
+        ]
+      },
+      {
+        "candidate_id": "way/23076886",
+        "name": "Mariswamy Mutt Road",
+        "osm_type": "way",
+        "osm_id": 23076886,
+        "match_score": 0.833,
+        "match_type": "initials",
+        "representative_lat": 12.958957,
+        "representative_lon": 77.578958,
+        "same_name_pieces": 1,
+        "length_m": 279.2,
+        "osm_way_ids": [
+          23076886,
+          1159907080
+        ],
+        "bbox": [
+          77.577649,
+          12.958725,
+          77.580135,
+          12.959044
+        ]
+      },
+      {
+        "candidate_id": "way/1104613500",
+        "name": "MLA Office Road",
+        "osm_type": "way",
+        "osm_id": 1104613500,
+        "match_score": 0.833,
+        "match_type": "initials",
+        "representative_lat": 12.991053,
+        "representative_lon": 77.572736,
+        "same_name_pieces": 1,
+        "length_m": 256.2,
+        "osm_way_ids": [
+          38535101,
+          1104613500,
+          1104613501,
+          1408487341
+        ],
+        "bbox": [
+          77.571608,
+          12.990723,
+          77.573884,
+          12.991059
+        ]
+      },
+      {
+        "candidate_id": "way/91892795",
+        "name": "Langford Gardens Road",
+        "osm_type": "way",
+        "osm_id": 91892795,
+        "match_score": 0.833,
+        "match_type": "initials",
+        "representative_lat": 12.96406,
+        "representative_lon": 77.596928,
+        "same_name_pieces": 1,
+        "length_m": 127.0,
+        "osm_way_ids": [
+          91892795
+        ],
+        "bbox": [
+          77.596656,
+          12.963698,
+          77.597715,
+          12.964185
+        ]
+      }
+    ]
+  },
+  {
+    "timestamp_s": 4.0,
+    "query_text": "mgroad",
+    "normalized_text": "mgroad",
+    "ocr_confidence": 0.83,
+    "ambiguous": true,
+    "n_candidates_total": 5,
+    "truncated": false,
+    "candidates": [
+      {
+        "candidate_id": "way/1196514128",
+        "name": "Mahatma Gandhi Road",
+        "osm_type": "way",
+        "osm_id": 1196514128,
+        "match_score": 1.0,
+        "match_type": "initials",
+        "representative_lat": 12.974456,
+        "representative_lon": 77.610584,
+        "same_name_pieces": 1,
+        "length_m": 4045.8,
+        "osm_way_ids": [
+          38522039,
+          147859357,
+          161416663,
+          263812623,
+          435249314,
+          544759837,
+          544759838,
+          638541495,
+          638541500,
+          763293422,
+          766406223,
+          824818261,
+          915684608,
+          1101271052,
+          1101945532,
+          1106110231,
+          1109956874,
+          1112419800,
+          1112419801,
+          1125542416,
+          1125542417,
+          1148434865,
+          1151679464,
+          1151681832,
+          1166322819,
+          1166322820,
+          1166322823,
+          1166322824,
+          1166571293,
+          1196514128,
+          1227562842,
+          1227562843,
+          1227562844,
+          1278555476,
+          1308654687,
+          1308654713,
+          1368125926
+        ],
+        "bbox": [
+          77.599195,
+          12.972849,
+          77.61749,
+          12.976704
+        ]
+      },
+      {
+        "candidate_id": "way/1308720281",
+        "name": "MG Road Boulevard",
+        "osm_type": "way",
+        "osm_id": 1308720281,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.976349,
+        "representative_lon": 77.603574,
+        "same_name_pieces": 1,
+        "length_m": 298.1,
+        "osm_way_ids": [
+          1296032741,
+          1308720281,
+          1308720282
+        ],
+        "bbox": [
+          77.601996,
+          12.976087,
+          77.604662,
+          12.976725
+        ]
+      },
+      {
+        "candidate_id": "way/23076886",
+        "name": "Mariswamy Mutt Road",
+        "osm_type": "way",
+        "osm_id": 23076886,
+        "match_score": 0.833,
+        "match_type": "initials",
+        "representative_lat": 12.958957,
+        "representative_lon": 77.578958,
+        "same_name_pieces": 1,
+        "length_m": 279.2,
+        "osm_way_ids": [
+          23076886,
+          1159907080
+        ],
+        "bbox": [
+          77.577649,
+          12.958725,
+          77.580135,
+          12.959044
+        ]
+      },
+      {
+        "candidate_id": "way/1104613500",
+        "name": "MLA Office Road",
+        "osm_type": "way",
+        "osm_id": 1104613500,
+        "match_score": 0.833,
+        "match_type": "initials",
+        "representative_lat": 12.991053,
+        "representative_lon": 77.572736,
+        "same_name_pieces": 1,
+        "length_m": 256.2,
+        "osm_way_ids": [
+          38535101,
+          1104613500,
+          1104613501,
+          1408487341
+        ],
+        "bbox": [
+          77.571608,
+          12.990723,
+          77.573884,
+          12.991059
+        ]
+      },
+      {
+        "candidate_id": "way/91892795",
+        "name": "Langford Gardens Road",
+        "osm_type": "way",
+        "osm_id": 91892795,
+        "match_score": 0.833,
+        "match_type": "initials",
+        "representative_lat": 12.96406,
+        "representative_lon": 77.596928,
+        "same_name_pieces": 1,
+        "length_m": 127.0,
+        "osm_way_ids": [
+          91892795
+        ],
+        "bbox": [
+          77.596656,
+          12.963698,
+          77.597715,
+          12.964185
+        ]
+      }
+    ]
+  },
+  {
+    "timestamp_s": 8.0,
+    "query_text": "CUBBON RD",
+    "normalized_text": "cubbon road",
+    "ocr_confidence": 0.88,
+    "ambiguous": false,
+    "n_candidates_total": 1,
+    "truncated": false,
+    "candidates": [
+      {
+        "candidate_id": "way/362900185",
+        "name": "Cubbon Road",
+        "osm_type": "way",
+        "osm_id": 362900185,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.978305,
+        "representative_lon": 77.605166,
+        "same_name_pieces": 1,
+        "length_m": 4144.0,
+        "osm_way_ids": [
+          52063524,
+          107215079,
+          107215088,
+          359476587,
+          359476589,
+          362900184,
+          362900185,
+          464465211,
+          464465222,
+          542070643,
+          542070645,
+          542070647,
+          544761377,
+          544761378,
+          544761379,
+          544761380,
+          544761381,
+          544761382,
+          544761383,
+          554901329,
+          760700372,
+          760889232,
+          1106310175,
+          1110192330,
+          1110192331,
+          1148395508,
+          1148395510,
+          1148395512,
+          1148718165,
+          1150927562,
+          1205167663,
+          1205167664,
+          1205167665,
+          1205167666,
+          1232642395
+        ],
+        "bbox": [
+          77.595902,
+          12.975253,
+          77.614466,
+          12.981473
+        ]
+      }
+    ]
+  },
+  {
+    "timestamp_s": 12.0,
+    "query_text": "1st cross",
+    "normalized_text": "1st cross",
+    "ocr_confidence": 0.79,
+    "ambiguous": true,
+    "n_candidates_total": 29,
+    "truncated": false,
+    "candidates": [
+      {
+        "candidate_id": "way/1067081400",
+        "name": "1st Cross Road",
+        "osm_type": "way",
+        "osm_id": 1067081400,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.95836,
+        "representative_lon": 77.58896,
+        "same_name_pieces": 23,
+        "length_m": 1491.2,
+        "osm_way_ids": [
+          23134706,
+          408869077,
+          473960707,
+          1067081400
+        ],
+        "bbox": [
+          77.583532,
+          12.95602,
+          77.592162,
+          12.960343
+        ]
+      },
+      {
+        "candidate_id": "way/175392012",
+        "name": "1st Cross Road",
+        "osm_type": "way",
+        "osm_id": 175392012,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.96078,
+        "representative_lon": 77.593334,
+        "same_name_pieces": 23,
+        "length_m": 453.1,
+        "osm_way_ids": [
+          175392012
+        ],
+        "bbox": [
+          77.592431,
+          12.958293,
+          77.593875,
+          12.962112
+        ]
+      },
+      {
+        "candidate_id": "way/23076485",
+        "name": "1st Cross Road",
+        "osm_type": "way",
+        "osm_id": 23076485,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.962021,
+        "representative_lon": 77.57851,
+        "same_name_pieces": 23,
+        "length_m": 416.4,
+        "osm_way_ids": [
+          23076485,
+          1501666242
+        ],
+        "bbox": [
+          77.57847,
+          12.960045,
+          77.579281,
+          12.963544
+        ]
+      },
+      {
+        "candidate_id": "way/172891315",
+        "name": "1st Cross Road",
+        "osm_type": "way",
+        "osm_id": 172891315,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.961556,
+        "representative_lon": 77.581059,
+        "same_name_pieces": 23,
+        "length_m": 402.8,
+        "osm_way_ids": [
+          172891314,
+          172891315,
+          172891316
+        ],
+        "bbox": [
+          77.579672,
+          12.960616,
+          77.583119,
+          12.961904
+        ]
+      },
+      {
+        "candidate_id": "way/137842622",
+        "name": "1st Cross Road",
+        "osm_type": "way",
+        "osm_id": 137842622,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.985565,
+        "representative_lon": 77.575471,
+        "same_name_pieces": 23,
+        "length_m": 278.7,
+        "osm_way_ids": [
+          137842622
+        ],
+        "bbox": [
+          77.575077,
+          12.985452,
+          77.575493,
+          12.987925
+        ]
+      },
+      {
+        "candidate_id": "way/111997552",
+        "name": "1st Cross Road",
+        "osm_type": "way",
+        "osm_id": 111997552,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.973594,
+        "representative_lon": 77.609443,
+        "same_name_pieces": 23,
+        "length_m": 266.2,
+        "osm_way_ids": [
+          23029691,
+          111997552
+        ],
+        "bbox": [
+          77.609373,
+          12.972295,
+          77.609622,
+          12.974674
+        ]
+      },
+      {
+        "candidate_id": "way/38870591",
+        "name": "1st Cross Road",
+        "osm_type": "way",
+        "osm_id": 38870591,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.985748,
+        "representative_lon": 77.578247,
+        "same_name_pieces": 23,
+        "length_m": 258.3,
+        "osm_way_ids": [
+          38870591
+        ],
+        "bbox": [
+          77.578236,
+          12.985321,
+          77.578905,
+          12.987043
+        ]
+      },
+      {
+        "candidate_id": "way/1094035808",
+        "name": "1st Cross Road",
+        "osm_type": "way",
+        "osm_id": 1094035808,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.964691,
+        "representative_lon": 77.616889,
+        "same_name_pieces": 23,
+        "length_m": 253.0,
+        "osm_way_ids": [
+          38772798,
+          1094035808
+        ],
+        "bbox": [
+          77.616195,
+          12.96394,
+          77.616929,
+          12.965574
+        ]
+      },
+      {
+        "candidate_id": "way/37763930",
+        "name": "1st Cross Road",
+        "osm_type": "way",
+        "osm_id": 37763930,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.969839,
+        "representative_lon": 77.608778,
+        "same_name_pieces": 23,
+        "length_m": 245.3,
+        "osm_way_ids": [
+          37763929,
+          37763930,
+          553253476,
+          1125692660
+        ],
+        "bbox": [
+          77.608144,
+          12.969485,
+          77.609095,
+          12.970806
+        ]
+      },
+      {
+        "candidate_id": "way/175392010",
+        "name": "1st Cross Road",
+        "osm_type": "way",
+        "osm_id": 175392010,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.960515,
+        "representative_lon": 77.590979,
+        "same_name_pieces": 23,
+        "length_m": 210.6,
+        "osm_way_ids": [
+          175392010
+        ],
+        "bbox": [
+          77.589894,
+          12.960263,
+          77.591753,
+          12.96081
+        ]
+      },
+      {
+        "candidate_id": "way/38535913",
+        "name": "1st Cross Road",
+        "osm_type": "way",
+        "osm_id": 38535913,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.989179,
+        "representative_lon": 77.575883,
+        "same_name_pieces": 23,
+        "length_m": 159.0,
+        "osm_way_ids": [
+          38535913
+        ],
+        "bbox": [
+          77.575757,
+          12.98867,
+          77.576101,
+          12.99006
+        ]
+      },
+      {
+        "candidate_id": "way/172845849",
+        "name": "1st Cross Road",
+        "osm_type": "way",
+        "osm_id": 172845849,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.955456,
+        "representative_lon": 77.581597,
+        "same_name_pieces": 23,
+        "length_m": 154.9,
+        "osm_way_ids": [
+          172845849
+        ],
+        "bbox": [
+          77.581557,
+          12.954841,
+          77.581676,
+          12.956229
+        ]
+      },
+      {
+        "candidate_id": "way/38772817",
+        "name": "1st Cross Road",
+        "osm_type": "way",
+        "osm_id": 38772817,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.964648,
+        "representative_lon": 77.612376,
+        "same_name_pieces": 23,
+        "length_m": 150.9,
+        "osm_way_ids": [
+          38772817
+        ],
+        "bbox": [
+          77.612094,
+          12.964369,
+          77.613142,
+          12.965248
+        ]
+      },
+      {
+        "candidate_id": "way/1308629017",
+        "name": "1st Cross Road",
+        "osm_type": "way",
+        "osm_id": 1308629017,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.968451,
+        "representative_lon": 77.59581,
+        "same_name_pieces": 23,
+        "length_m": 130.1,
+        "osm_way_ids": [
+          1308629017
+        ],
+        "bbox": [
+          77.595316,
+          12.968303,
+          77.596488,
+          12.968559
+        ]
+      },
+      {
+        "candidate_id": "way/38541570",
+        "name": "1st Cross Road",
+        "osm_type": "way",
+        "osm_id": 38541570,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.967133,
+        "representative_lon": 77.584814,
+        "same_name_pieces": 23,
+        "length_m": 127.2,
+        "osm_way_ids": [
+          38541570
+        ],
+        "bbox": [
+          77.584723,
+          12.966883,
+          77.585033,
+          12.967973
+        ]
+      },
+      {
+        "candidate_id": "way/38872987",
+        "name": "1st Cross Road",
+        "osm_type": "way",
+        "osm_id": 38872987,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.992672,
+        "representative_lon": 77.589842,
+        "same_name_pieces": 23,
+        "length_m": 107.6,
+        "osm_way_ids": [
+          38872955,
+          38872987
+        ],
+        "bbox": [
+          77.58972,
+          12.992061,
+          77.589885,
+          12.99305
+        ]
+      },
+      {
+        "candidate_id": "way/23078198",
+        "name": "1st Cross Road",
+        "osm_type": "way",
+        "osm_id": 23078198,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.951115,
+        "representative_lon": 77.592449,
+        "same_name_pieces": 23,
+        "length_m": 99.7,
+        "osm_way_ids": [
+          23078198
+        ],
+        "bbox": [
+          77.592138,
+          12.950784,
+          77.59276,
+          12.951446
+        ]
+      },
+      {
+        "candidate_id": "way/36954583",
+        "name": "1st Cross Road",
+        "osm_type": "way",
+        "osm_id": 36954583,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.977164,
+        "representative_lon": 77.575338,
+        "same_name_pieces": 23,
+        "length_m": 95.1,
+        "osm_way_ids": [
+          36954583,
+          150216114
+        ],
+        "bbox": [
+          77.574797,
+          12.977088,
+          77.575665,
+          12.977217
+        ]
+      },
+      {
+        "candidate_id": "way/38870586",
+        "name": "1st Cross Road",
+        "osm_type": "way",
+        "osm_id": 38870586,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.986182,
+        "representative_lon": 77.577337,
+        "same_name_pieces": 23,
+        "length_m": 92.7,
+        "osm_way_ids": [
+          38870586
+        ],
+        "bbox": [
+          77.57691,
+          12.986176,
+          77.577765,
+          12.986187
+        ]
+      },
+      {
+        "candidate_id": "way/1429963026",
+        "name": "1st Cross Road",
+        "osm_type": "way",
+        "osm_id": 1429963026,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.990355,
+        "representative_lon": 77.576261,
+        "same_name_pieces": 23,
+        "length_m": 82.6,
+        "osm_way_ids": [
+          1429963026
+        ],
+        "bbox": [
+          77.575899,
+          12.990239,
+          77.576623,
+          12.990472
+        ]
+      },
+      {
+        "candidate_id": "way/148319049",
+        "name": "1st Cross Road",
+        "osm_type": "way",
+        "osm_id": 148319049,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.984391,
+        "representative_lon": 77.578061,
+        "same_name_pieces": 23,
+        "length_m": 67.4,
+        "osm_way_ids": [
+          148319049
+        ],
+        "bbox": [
+          77.577808,
+          12.984214,
+          77.578313,
+          12.984567
+        ]
+      },
+      {
+        "candidate_id": "way/727741257",
+        "name": "1st Cross Road",
+        "osm_type": "way",
+        "osm_id": 727741257,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.976474,
+        "representative_lon": 77.617441,
+        "same_name_pieces": 23,
+        "length_m": 45.0,
+        "osm_way_ids": [
+          727741257
+        ],
+        "bbox": [
+          77.617235,
+          12.976446,
+          77.617646,
+          12.976501
+        ]
+      },
+      {
+        "candidate_id": "way/1227997925",
+        "name": "1st Cross Road",
+        "osm_type": "way",
+        "osm_id": 1227997925,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.959579,
+        "representative_lon": 77.602992,
+        "same_name_pieces": 23,
+        "length_m": 38.4,
+        "osm_way_ids": [
+          1227997925
+        ],
+        "bbox": [
+          77.60288,
+          12.959271,
+          77.602999,
+          12.959596
+        ]
+      },
+      {
+        "candidate_id": "way/1103085533",
+        "name": "1st A Cross Road",
+        "osm_type": "way",
+        "osm_id": 1103085533,
+        "match_score": 0.889,
+        "match_type": "full",
+        "representative_lat": 12.992871,
+        "representative_lon": 77.589393,
+        "same_name_pieces": 1,
+        "length_m": 37.4,
+        "osm_way_ids": [
+          1103085533
+        ],
+        "bbox": [
+          77.589367,
+          12.992728,
+          77.589427,
+          12.993059
+        ]
+      },
+      {
+        "candidate_id": "way/38872944",
+        "name": "10th Cross Road",
+        "osm_type": "way",
+        "osm_id": 38872944,
+        "match_score": 0.778,
+        "match_type": "full",
+        "representative_lat": 12.992362,
+        "representative_lon": 77.592701,
+        "same_name_pieces": 3,
+        "length_m": 487.0,
+        "osm_way_ids": [
+          38872935,
+          38872944,
+          1230827230
+        ],
+        "bbox": [
+          77.592211,
+          12.990138,
+          77.593173,
+          12.993912
+        ]
+      },
+      {
+        "candidate_id": "way/175392005",
+        "name": "10th Cross Road",
+        "osm_type": "way",
+        "osm_id": 175392005,
+        "match_score": 0.778,
+        "match_type": "full",
+        "representative_lat": 12.955597,
+        "representative_lon": 77.590772,
+        "same_name_pieces": 3,
+        "length_m": 267.8,
+        "osm_way_ids": [
+          175392005
+        ],
+        "bbox": [
+          77.590209,
+          12.954227,
+          77.59107,
+          12.956457
+        ]
+      },
+      {
+        "candidate_id": "way/38757901",
+        "name": "11th Cross",
+        "osm_type": "way",
+        "osm_id": 38757901,
+        "match_score": 0.778,
+        "match_type": "full",
+        "representative_lat": 12.965286,
+        "representative_lon": 77.593471,
+        "same_name_pieces": 1,
+        "length_m": 191.0,
+        "osm_way_ids": [
+          38757901
+        ],
+        "bbox": [
+          77.592487,
+          12.965285,
+          77.59425,
+          12.965302
+        ]
+      },
+      {
+        "candidate_id": "way/36907518",
+        "name": "10th Cross Road",
+        "osm_type": "way",
+        "osm_id": 36907518,
+        "match_score": 0.778,
+        "match_type": "full",
+        "representative_lat": 12.968976,
+        "representative_lon": 77.584757,
+        "same_name_pieces": 3,
+        "length_m": 137.4,
+        "osm_way_ids": [
+          36907518
+        ],
+        "bbox": [
+          77.584722,
+          12.968359,
+          77.584792,
+          12.969593
+        ]
+      },
+      {
+        "candidate_id": "way/36907519",
+        "name": "11th Cross Road",
+        "osm_type": "way",
+        "osm_id": 36907519,
+        "match_score": 0.778,
+        "match_type": "full",
+        "representative_lat": 12.969323,
+        "representative_lon": 77.584364,
+        "same_name_pieces": 1,
+        "length_m": 129.5,
+        "osm_way_ids": [
+          36907519
+        ],
+        "bbox": [
+          77.584305,
+          12.968745,
+          77.584407,
+          12.969903
+        ]
+      }
+    ]
+  },
+  {
+    "timestamp_s": 15.0,
+    "query_text": "palaceroad",
+    "normalized_text": "palaceroad",
+    "ocr_confidence": 0.74,
+    "ambiguous": true,
+    "n_candidates_total": 2,
+    "truncated": false,
+    "candidates": [
+      {
+        "candidate_id": "way/160558221",
+        "name": "Palace Road",
+        "osm_type": "way",
+        "osm_id": 160558221,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.98503,
+        "representative_lon": 77.588291,
+        "same_name_pieces": 2,
+        "length_m": 2624.7,
+        "osm_way_ids": [
+          130355529,
+          160558221,
+          161416660,
+          257625430,
+          325436715,
+          403473928,
+          452860327,
+          458439812,
+          764327043,
+          764327044,
+          779282853,
+          1035901180,
+          1148406429,
+          1148406432,
+          1221922602,
+          1255160637,
+          1255160638,
+          1267185545,
+          1316590794,
+          1352263719
+        ],
+        "bbox": [
+          77.584863,
+          12.978846,
+          77.58904,
+          12.993127
+        ]
+      },
+      {
+        "candidate_id": "way/234946738",
+        "name": "Palace Road",
+        "osm_type": "way",
+        "osm_id": 234946738,
+        "match_score": 1.0,
+        "match_type": "full",
+        "representative_lat": 12.974871,
+        "representative_lon": 77.582357,
+        "same_name_pieces": 2,
+        "length_m": 1068.3,
+        "osm_way_ids": [
+          38684971,
+          234946738
+        ],
+        "bbox": [
+          77.581144,
+          12.973187,
+          77.583982,
+          12.977134
+        ]
+      }
+    ]
+  },
+  {
+    "timestamp_s": 18.0,
+    "query_text": "xqzvkw",
+    "normalized_text": "xqzvkw",
+    "ocr_confidence": 0.4,
+    "ambiguous": false,
+    "n_candidates_total": 0,
+    "truncated": false,
+    "candidates": []
+  }
+]
