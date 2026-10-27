@@ -6,14 +6,14 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { margin: 0; font-family: monospace; background: #0f172a; color: #f8fafc; display: flex; height: 100vh; }
-        #sidebar { width: 350px; background: #1e293b; padding: 20px; box-sizing: border-box; border-right: 1px solid #334155; display: flex; flex-direction: column; gap: 15px; }
-        #map { flex-grow: 1; height: 100%; }
+        body { margin: 0; font-family: monospace; background: #0f172a; color: #f8fafc; display: flex; height: 100vh; overflow: hidden; }
+        #sidebar { width: 320px; background: #1e293b; padding: 20px; box-sizing: border-box; border-right: 1px solid #334155; display: flex; flex-direction: column; gap: 15px; z-index: 1000; }
+        #map { flex-grow: 1; height: 100%; background: #0b0f19; }
         .card { background: #0f172a; border: 1px solid #334155; padding: 12px; border-radius: 6px; }
         h2 { margin-top: 0; font-size: 18px; color: #38bdf8; }
-        button { background: #0284c7; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; }
+        button { background: #0284c7; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; transition: background 0.2s; }
         button:hover { background: #0369a1; }
-        .metric { font-size: 20px; font-weight: bold; color: #4ade80; }
+        .metric { font-size: 18px; font-weight: bold; color: #4ade80; }
     </style>
 </head>
 <body>
@@ -26,7 +26,7 @@
         </div>
         <div class="card">
             <div>Estimated Lat / Lon</div>
-            <div id="coord-display" class="metric" style="font-size: 14px;">12.971600, 77.594600</div>
+            <div id="coord-display" class="metric" style="font-size: 13px;">Waiting for telemetry...</div>
         </div>
         <div class="card">
             <div>Uncertainty Radius ($\sigma$)</div>
@@ -36,7 +36,6 @@
             <div>Active Landmark Cue</div>
             <div id="cue-display" style="color: #fbbf24;">None</div>
         </div>
-        <button onclick="nextStep()">Step Frame (2s Poll)</button>
         <button onclick="resetEngine()" style="background: #ef4444;">Reset Engine</button>
     </div>
 
@@ -45,35 +44,48 @@
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Initialize Map centered on Bengaluru
-        const map = L.map('map').setView([12.9716, 77.5946], 16);
+        // Initialize map without hardcoded centers; bounds will lock on first API payload
+        const map = L.map('map', { zoomControl: false });
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        // Add standard slippy tile layer (fully movable like Google Maps)
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
-            attribution: '© OpenStreetMap'
+            attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        let vehicleMarker = L.marker([12.9716, 77.5946]).addTo(map).bindPopup("Estimated Vehicle Position");
-        let uncertaintyCircle = L.circle([12.9716, 77.5946], {radius: 10, color: '#38bdf8', fillOpacity: 0.2}).addTo(map);
-        let pathLine = L.polyline([], {color: '#ef4444', weight: 3}).addTo(map);
+        let vehicleMarker = null;
+        let uncertaintyCircle = null;
+        let pathLine = L.polyline([], {color: '#38bdf8', weight: 4, opacity: 0.8}).addTo(map);
+        let isInitialLoad = true;
 
-        async function nextStep() {
+        async function pollTelemetry() {
             try {
                 let response = await fetch('http://localhost:8000/api/state');
                 let data = await response.json();
                 
                 if (data.status === "completed") {
-                    alert("Simulation sequence finished.");
+                    console.info("Simulation sequence finished.");
                     return;
                 }
 
                 let lat = data.vehicle.lat;
                 let lon = data.vehicle.lon;
                 let uncertainty = data.vehicle.uncertainty_meters;
+                let newLatLng = [lat, lon];
 
-                // Update UI text
+                // Dynamically initialize markers and auto-zoom on the very first valid data point
+                if (isInitialLoad) {
+                    map.setView(newLatLng, 17); // Appropriate close-up zoom for urban navigation
+                    vehicleMarker = L.marker(newLatLng).addTo(map).bindPopup("Vehicle Estimated Position");
+                    uncertaintyCircle = L.circle(newLatLng, {radius: uncertainty, color: '#38bdf8', fillColor: '#38bdf8', fillOpacity: 0.15}).addTo(map);
+                    isInitialLoad = false;
+                }
+
+                // Update Sidebar UI metrics
                 document.getElementById('step-display').innerText = `${data.step} / 3`;
                 document.getElementById('coord-display').innerText = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-                document.getElementById('uncertainty-display').innerText = `${uncertainty} meters`;
+                document.getElementById('uncertainty-display').innerText = `${uncertainty.toFixed(2)} meters`;
                 
                 let cueText = "None";
                 if (data.observation && data.observation.detected) {
@@ -81,14 +93,14 @@
                 }
                 document.getElementById('cue-display').innerText = cueText;
 
-                // Update Map Elements
-                let newLatLng = [lat, lon];
+                // Update Map Elements smoothly
                 vehicleMarker.setLatLng(newLatLng);
                 uncertaintyCircle.setLatLng(newLatLng);
                 uncertaintyCircle.setRadius(uncertainty);
-                
                 pathLine.addLatLng(newLatLng);
-                map.panTo(newLatLng);
+                
+                // Smoothly pan map to follow tracking target
+                map.panTo(newLatLng, {animate: true});
 
             } catch (err) {
                 console.error("Backend connection failed:", err);
@@ -98,11 +110,14 @@
         async function resetEngine() {
             await fetch('http://localhost:8000/api/reset', {method: 'POST'});
             pathLine.setLatLngs([]);
+            isInitialLoad = true;
             location.reload();
         }
 
-        // Auto-poll every 2 seconds
-        setInterval(nextStep, 2000);
+        // Automatic polling every 2 seconds
+        setInterval(pollTelemetry, 2000);
+        // Fire immediately on load
+        pollTelemetry();
     </script>
 </body>
 </html>

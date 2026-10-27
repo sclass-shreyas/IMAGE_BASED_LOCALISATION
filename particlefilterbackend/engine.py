@@ -1,10 +1,10 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from particlefilter import ParticleFilterEngine
 import json
-import os
+from pathlib import Path
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from .particlefilter import ParticleFilterEngine
 
-app = FastAPI(title="P4 Localization Backend")
+app = FastAPI(title="P4 Particle Filter Backend Engine")
 
 app.add_middleware(
     CORSMiddleware,
@@ -14,55 +14,69 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-pf = ParticleFilterEngine()
+# Dynamically locate datastream/sampledata.json relative to workspace root
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_PATH = BASE_DIR / "datastream" / "sampledata.json"
 
-# Robust path pointing to data/localization_stream.json from backend/
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-STREAM_FILE = os.path.normpath(os.path.join(BASE_DIR, "..", "data", "localization_stream.json"))
+def load_datstream():
+    if not DATA_PATH.exists():
+        raise FileNotFoundError(f"Data stream file not found at {DATA_PATH}")
+    with open(DATA_PATH, "r") as f:
+        return json.load(f)
 
-current_step_index = 0
+# Load dataset dynamically
+dataset = load_datstream()
+frames = dataset.get("frames", [])
+total_steps = len(frames)
+
+# Initialize filter with first frame's coordinates if available
+init_lat = frames[0]["ground_truth"]["lat"] if frames else 12.9716
+init_lon = frames[0]["ground_truth"]["lon"] if frames else 77.5946
+pf_engine = ParticleFilterEngine(num_particles=150, initial_lat=init_lat, initial_lon=init_lon)
+
+current_frame_index = 0
 
 @app.get("/api/state")
-def get_current_state():
-    global current_step_index
+def get_state():
+    global current_frame_index
     
-    if not os.path.exists(STREAM_FILE):
-        return {"error": "Stream feed not found"}
-        
-    with open(STREAM_FILE, "r") as f:
-        data = json.load(f)
-        steps = data.get("steps", [])
-        
-        if current_step_index < len(steps):
-            step_data = steps[current_step_index]
-            
-            # 1. Process Motion (P3)
-            motion = step_data.get("motion", {})
-            pf.predict(motion.get("dx", 0.0), motion.get("dy", 0.0), motion.get("d_heading", 0.0))
-            
-            # 2. Process Observation / 25m Cluster (P1 & P2)
-            obs = step_data.get("observation", {})
-            if obs.get("detected", False):
-                pf.update(obs.get("candidates", []))
-                pf.resample()
-                
-            estimate = pf.get_estimate()
-            
-            response = {
-                "step": current_step_index,
-                "timestamp": step_data.get("timestamp"),
-                "vehicle": estimate,
-                "observation": obs
-            }
-            
-            current_step_index += 1
-            return response
-        else:
-            return {"status": "completed"}
+    if current_frame_index >= total_steps:
+        return {"status": "completed"}
+    
+    frame = frames[current_frame_index]
+    step_num = frame.get("step", current_frame_index + 1)
+    motion = frame.get("motion", {"dx_meters": 0.0, "dy_meters": 0.0})
+    observation = frame.get("observation", {"detected": False})
+    
+    # Run particle filter prediction and update steps
+    pf_engine.predict(motion.get("dx_meters", 0.0), motion.get("dy_meters", 0.0))
+    pf_engine.update(observation.get("detected", False))
+    
+    est_lat, est_lon, uncertainty = pf_engine.get_estimated_state()
+    
+    response_data = {
+        "status": "running",
+        "step": f"{step_num} / {total_steps}",
+        "vehicle": {
+            "lat": est_lat,
+            "lon": est_lon,
+            "uncertainty_meters": uncertainty
+        },
+        "observation": observation
+    }
+    
+    # Advance to next frame for subsequent polls
+    current_frame_index += 1
+    return response_data
 
 @app.post("/api/reset")
 def reset_engine():
-    global current_step_index, pf
-    current_step_index = 0
-    pf = ParticleFilterEngine()
-    return {"status": "reset successful"}
+    global current_frame_index, pf_engine, frames
+    dataset = load_datstream()
+    frames = dataset.get("frames", [])
+    current_frame_index = 0
+    if frames:
+        init_lat = frames[0]["ground_truth"]["lat"]
+        init_lon = frames[0]["ground_truth"]["lon"]
+        pf_engine = ParticleFilterEngine(num_particles=150, initial_lat=init_lat, initial_lon=init_lon)
+    return {"status": "reset_successful"}

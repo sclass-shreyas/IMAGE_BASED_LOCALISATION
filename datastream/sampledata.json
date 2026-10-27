@@ -1,63 +1,59 @@
 {
-  "metadata": {
-    "corridor": "MG Road Test Track",
+  "sequence_metadata": {
+    "location": "MG Road, Bengaluru",
+    "crs": "EPSG:32643",
     "total_steps": 3
   },
-  "steps": [
+  "frames": [
     {
-      "step": 0,
-      "timestamp": "2026-10-21T10:00:00Z",
+      "step": 1,
+      "ground_truth": {
+        "lat": 12.975610,
+        "lon": 77.606620
+      },
       "motion": {
-        "dx": 4.0,
-        "dy": 0.0,
-        "d_heading": 0.0
+        "dx_meters": 4.5,
+        "dy_meters": 1.2,
+        "heading_rad": 0.15
       },
       "observation": {
         "detected": true,
-        "cue_text": "MG Road Station Sign",
-        "cluster_center": {
-          "lat": 12.9716,
-          "lon": 77.5946
-        },
-        "radius_meters": 25.0,
-        "candidates": [
-          {"lat": 12.9716, "lon": 77.5946},
-          {"lat": 12.9718, "lon": 77.5949}
-        ]
-      }
-    },
-    {
-      "step": 1,
-      "timestamp": "2026-10-21T10:00:02Z",
-      "motion": {
-        "dx": 5.0,
-        "dy": 0.1,
-        "d_heading": 0.001
-      },
-      "observation": {
-        "detected": false
+        "cue_text": "Metro Station Pillar Alpha",
+        "landmark_id": "MG_RD_01"
       }
     },
     {
       "step": 2,
-      "timestamp": "2026-10-21T10:00:04Z",
+      "ground_truth": {
+        "lat": 12.975820,
+        "lon": 77.607840
+      },
       "motion": {
-        "dx": 4.5,
-        "dy": -0.05,
-        "d_heading": 0.002
+        "dx_meters": 5.1,
+        "dy_meters": 1.4,
+        "heading_rad": 0.18
       },
       "observation": {
         "detected": true,
-        "cue_text": "Trinity Circle Board",
-        "cluster_center": {
-          "lat": 12.9735,
-          "lon": 77.6080
-        },
-        "radius_meters": 25.0,
-        "candidates": [
-          {"lat": 12.9735, "lon": 77.6080},
-          {"lat": 12.9737, "lon": 77.6082}
-        ]
+        "cue_text": "Commercial Complex Facade",
+        "landmark_id": "MG_RD_02"
+      }
+    },
+    {
+      "step": 3,
+      "ground_truth": {
+        "lat": 12.976050,
+        "lon": 77.609100
+      },
+      "motion": {
+        "dx_meters": 4.8,
+        "dy_meters": 1.1,
+        "heading_rad": 0.16
+      },
+      "observation": {
+        "detected": false,
+        "cue_text": "None",
+        "landmark_id": null
       }
     }
   ]
