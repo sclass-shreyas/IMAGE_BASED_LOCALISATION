@@ -1,111 +1,244 @@
 {
   "sequence_metadata": {
-    "location": "MG Road, Bengaluru",
+    "location": "Cubbon Road, Bengaluru",
     "crs": "EPSG:32643",
-    "description": "Autonomous vehicle visual-inertial localization stream with landmark cues"
+    "description": "Expanded multi-sensor telemetry stream integrating P1 (Vision), P2 (OSM Candidates), and P3 (Motion)"
   },
   "frames": [
     {
       "timestamp": "2026-10-27T10:00:00Z",
-      "ground_truth": {
-        "lat": 12.975610,
-        "lon": 77.606620
-      },
-      "motion": {
-        "dx_meters": 0.0,
-        "dy_meters": 0.0,
-        "heading_rad": 0.15
-      },
       "observation": {
-        "detected": true,
-        "cue_text": "MG Road Metro Station Pillar Alpha",
-        "landmark_id": "MGRD_BLR_01"
-      }
+        "text": "car",
+        "confidence": 0.9999,
+        "detector_confidence": 0.52,
+        "bbox_pixels": [[403, 316], [440, 316], [440, 333], [403, 333]]
+      },
+      "osm_candidates_response": {
+        "timestamp_s": 8.0,
+        "query_text": "CUBBON RD",
+        "normalized_text": "cubbon road",
+        "ocr_confidence": 0.88,
+        "ambiguous": false,
+        "n_candidates_total": 1,
+        "candidates": [
+          {
+            "candidate_id": "way/362900185",
+            "name": "Cubbon Road",
+            "representative_lat": 12.97831,
+            "representative_lon": 77.60517,
+            "match_score": 1.0,
+            "segments": [[[12.9790, 77.6040], [12.9788, 77.6046]], [[12.9788, 77.6046], [12.9783, 77.6052]]]
+          }
+        ]
+      },
+      "motion": { "timestamp": 1761561600.0, "dx": 0.0, "dy": 0.0, "d_heading": 0.0, "confidence": 1.0 }
     },
     {
       "timestamp": "2026-10-27T10:00:02Z",
-      "ground_truth": {
-        "lat": 12.975720,
-        "lon": 77.607210
+      "observation": { "text": "car", "confidence": 0.98, "detector_confidence": 0.55, "bbox_pixels": [[405, 318], [442, 318], [442, 335], [405, 335]] },
+      "osm_candidates_response": {
+        "timestamp_s": 10.0,
+        "query_text": "CUBBON RD",
+        "normalized_text": "cubbon road",
+        "ocr_confidence": 0.90,
+        "ambiguous": false,
+        "n_candidates_total": 1,
+        "candidates": [
+          {
+            "candidate_id": "way/362900185",
+            "name": "Cubbon Road",
+            "representative_lat": 12.97850,
+            "representative_lon": 77.60580,
+            "match_score": 1.0,
+            "segments": [[[12.9788, 77.6046], [12.9785, 77.6058]]]
+          }
+        ]
       },
-      "motion": {
-        "dx_meters": 5.2,
-        "dy_meters": 1.1,
-        "heading_rad": 0.16
-      },
-      "observation": {
-        "detected": true,
-        "cue_text": "Commercial Retail Facade Marker",
-        "landmark_id": "MGRD_BLR_02"
-      }
+      "motion": { "timestamp": 1761561602.0, "dx": 4.5, "dy": 2.1, "d_heading": 0.01, "confidence": 0.95 }
     },
     {
       "timestamp": "2026-10-27T10:00:04Z",
-      "ground_truth": {
-        "lat": 12.975850,
-        "lon": 77.607900
+      "observation": { "text": "car", "confidence": 0.97, "detector_confidence": 0.50, "bbox_pixels": [[408, 320], [445, 320], [445, 337], [408, 337]] },
+      "osm_candidates_response": {
+        "timestamp_s": 12.0,
+        "query_text": "CUBBON RD",
+        "normalized_text": "cubbon road",
+        "ocr_confidence": 0.85,
+        "ambiguous": false,
+        "n_candidates_total": 1,
+        "candidates": [
+          {
+            "candidate_id": "way/362900185",
+            "name": "Cubbon Road",
+            "representative_lat": 12.97870,
+            "representative_lon": 77.60640,
+            "match_score": 0.95,
+            "segments": [[[12.9785, 77.6058], [12.9787, 77.6064]]]
+          }
+        ]
       },
-      "motion": {
-        "dx_meters": 6.1,
-        "dy_meters": 1.4,
-        "heading_rad": 0.17
-      },
-      "observation": {
-        "detected": false,
-        "cue_text": "None",
-        "landmark_id": null
-      }
+      "motion": { "timestamp": 1761561604.0, "dx": 5.0, "dy": 2.2, "d_heading": 0.00, "confidence": 0.92 }
     },
     {
       "timestamp": "2026-10-27T10:00:06Z",
-      "ground_truth": {
-        "lat": 12.975960,
-        "lon": 77.608550
+      "observation": { "text": "sign", "confidence": 0.91, "detector_confidence": 0.48, "bbox_pixels": [[390, 300], [420, 300], [420, 320], [390, 320]] },
+      "osm_candidates_response": {
+        "timestamp_s": 14.0,
+        "query_text": "CUBBON RD",
+        "normalized_text": "cubbon road",
+        "ocr_confidence": 0.82,
+        "ambiguous": false,
+        "n_candidates_total": 1,
+        "candidates": [
+          {
+            "candidate_id": "way/362900185",
+            "name": "Cubbon Road",
+            "representative_lat": 12.97890,
+            "representative_lon": 77.60700,
+            "match_score": 0.90,
+            "segments": [[[12.9787, 77.6064], [12.9789, 77.6070]]]
+          }
+        ]
       },
-      "motion": {
-        "dx_meters": 5.8,
-        "dy_meters": 0.9,
-        "heading_rad": 0.15
-      },
-      "observation": {
-        "detected": true,
-        "cue_text": "Trinity Church Junction Signage Cluster",
-        "landmark_id": "MGRD_BLR_03"
-      }
+      "motion": { "timestamp": 1761561606.0, "dx": 4.8, "dy": 2.0, "d_heading": -0.01, "confidence": 0.90 }
     },
     {
       "timestamp": "2026-10-27T10:00:08Z",
-      "ground_truth": {
-        "lat": 12.976090,
-        "lon": 77.609240
+      "observation": { "text": "car", "confidence": 0.99, "detector_confidence": 0.60, "bbox_pixels": [[410, 325], [448, 325], [448, 342], [410, 342]] },
+      "osm_candidates_response": {
+        "timestamp_s": 16.0,
+        "query_text": "CUBBON RD",
+        "normalized_text": "cubbon road",
+        "ocr_confidence": 0.89,
+        "ambiguous": false,
+        "n_candidates_total": 1,
+        "candidates": [
+          {
+            "candidate_id": "way/362900185",
+            "name": "Cubbon Road",
+            "representative_lat": 12.97910,
+            "representative_lon": 77.60760,
+            "match_score": 0.92,
+            "segments": [[[12.9789, 77.6070], [12.9791, 77.6076]]]
+          }
+        ]
       },
-      "motion": {
-        "dx_meters": 6.0,
-        "dy_meters": 1.2,
-        "heading_rad": 0.18
-      },
-      "observation": {
-        "detected": false,
-        "cue_text": "None",
-        "landmark_id": null
-      }
+      "motion": { "timestamp": 1761561608.0, "dx": 5.2, "dy": 2.3, "d_heading": 0.02, "confidence": 0.94 }
     },
     {
       "timestamp": "2026-10-27T10:00:10Z",
-      "ground_truth": {
-        "lat": 12.976210,
-        "lon": 77.609910
+      "observation": { "text": "car", "confidence": 0.96, "detector_confidence": 0.53, "bbox_pixels": [[402, 315], [438, 315], [438, 332], [402, 332]] },
+      "osm_candidates_response": {
+        "timestamp_s": 18.0,
+        "query_text": "CUBBON RD",
+        "normalized_text": "cubbon road",
+        "ocr_confidence": 0.87,
+        "ambiguous": false,
+        "n_candidates_total": 1,
+        "candidates": [
+          {
+            "candidate_id": "way/362900185",
+            "name": "Cubbon Road",
+            "representative_lat": 12.97930,
+            "representative_lon": 77.60820,
+            "match_score": 0.94,
+            "segments": [[[12.9791, 77.6076], [12.9793, 77.6082]]]
+          }
+        ]
       },
-      "motion": {
-        "dx_meters": 5.9,
-        "dy_meters": 1.0,
-        "heading_rad": 0.16
+      "motion": { "timestamp": 1761561610.0, "dx": 5.0, "dy": 2.1, "d_heading": 0.01, "confidence": 0.93 }
+    },
+    {
+      "timestamp": "2026-10-27T10:00:12Z",
+      "observation": { "text": "car", "confidence": 0.98, "detector_confidence": 0.57, "bbox_pixels": [[406, 319], [443, 319], [443, 336], [406, 336]] },
+      "osm_candidates_response": {
+        "timestamp_s": 20.0,
+        "query_text": "CUBBON RD",
+        "normalized_text": "cubbon road",
+        "ocr_confidence": 0.91,
+        "ambiguous": false,
+        "n_candidates_total": 1,
+        "candidates": [
+          {
+            "candidate_id": "way/362900185",
+            "name": "Cubbon Road",
+            "representative_lat": 12.97950,
+            "representative_lon": 77.60880,
+            "match_score": 0.96,
+            "segments": [[[12.9793, 77.6082], [12.9795, 77.6088]]]
+          }
+        ]
       },
-      "observation": {
-        "detected": true,
-        "cue_text": "Public Transit Bus Stop Shelter",
-        "landmark_id": "MGRD_BLR_04"
-      }
+      "motion": { "timestamp": 1761561612.0, "dx": 5.1, "dy": 2.2, "d_heading": 0.00, "confidence": 0.95 }
+    },
+    {
+      "timestamp": "2026-10-27T10:00:14Z",
+      "observation": { "text": "sign", "confidence": 0.93, "detector_confidence": 0.49, "bbox_pixels": [[395, 305], [425, 305], [425, 325], [395, 325]] },
+      "osm_candidates_response": {
+        "timestamp_s": 22.0,
+        "query_text": "CUBBON RD",
+        "normalized_text": "cubbon road",
+        "ocr_confidence": 0.86,
+        "ambiguous": false,
+        "n_candidates_total": 1,
+        "candidates": [
+          {
+            "candidate_id": "way/362900185",
+            "name": "Cubbon Road",
+            "representative_lat": 12.97970,
+            "representative_lon": 77.60940,
+            "match_score": 0.91,
+            "segments": [[[12.9795, 77.6088], [12.9797, 77.6094]]]
+          }
+        ]
+      },
+      "motion": { "timestamp": 1761561614.0, "dx": 4.9, "dy": 2.0, "d_heading": -0.01, "confidence": 0.91 }
+    },
+    {
+      "timestamp": "2026-10-27T10:00:16Z",
+      "observation": { "text": "car", "confidence": 0.99, "detector_confidence": 0.62, "bbox_pixels": [[412, 328], [450, 328], [450, 345], [412, 345]] },
+      "osm_candidates_response": {
+        "timestamp_s": 24.0,
+        "query_text": "CUBBON RD",
+        "normalized_text": "cubbon road",
+        "ocr_confidence": 0.92,
+        "ambiguous": false,
+        "n_candidates_total": 1,
+        "candidates": [
+          {
+            "candidate_id": "way/362900185",
+            "name": "Cubbon Road",
+            "representative_lat": 12.97990,
+            "representative_lon": 77.61000,
+            "match_score": 0.97,
+            "segments": [[[12.9797, 77.6094], [12.9799, 77.6100]]]
+          }
+        ]
+      },
+      "motion": { "timestamp": 1761561616.0, "dx": 5.3, "dy": 2.4, "d_heading": 0.02, "confidence": 0.96 }
+    },
+    {
+      "timestamp": "2026-10-27T10:00:18Z",
+      "observation": { "text": "car", "confidence": 0.97, "detector_confidence": 0.54, "bbox_pixels": [[404, 317], [441, 317], [441, 334], [404, 334]] },
+      "osm_candidates_response": {
+        "timestamp_s": 26.0,
+        "query_text": "CUBBON RD",
+        "normalized_text": "cubbon road",
+        "ocr_confidence": 0.88,
+        "ambiguous": false,
+        "n_candidates_total": 1,
+        "candidates": [
+          {
+            "candidate_id": "way/362900185",
+            "name": "Cubbon Road",
+            "representative_lat": 12.98010,
+            "representative_lon": 77.61060,
+            "match_score": 0.95,
+            "segments": [[[12.9799, 77.6100], [12.9801, 77.6106]]]
+          }
+        ]
+      },
+      "motion": { "timestamp": 1761561618.0, "dx": 5.0, "dy": 2.1, "d_heading": 0.00, "confidence": 0.94 }
     }
   ]
 }

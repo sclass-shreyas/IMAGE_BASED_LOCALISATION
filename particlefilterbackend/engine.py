@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .particlefilter import ParticleFilterEngine
 
-app = FastAPI(title="P4 Particle Filter Timestamp-Synced Backend")
+app = FastAPI(title="P4 Integrated Telemetry Localization Engine")
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,23 +18,20 @@ app.add_middleware(
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_PATH = BASE_DIR / "datastream" / "sampledata.json"
 
-def load_datstream():
+def load_datastream():
     if not DATA_PATH.exists():
         raise FileNotFoundError(f"Data stream file not found at {DATA_PATH}")
     with open(DATA_PATH, "r") as f:
         return json.load(f)
 
-dataset = load_datstream()
+dataset = load_datastream()
 frames = dataset.get("frames", [])
 
-# Initialize filter with the first frame coordinates
-init_lat = frames[0]["ground_truth"]["lat"] if frames else 12.9716
-init_lon = frames[0]["ground_truth"]["lon"] if frames else 77.5946
-pf_engine = ParticleFilterEngine(num_particles=150, initial_lat=init_lat, initial_lon=init_lon)
+init_lat = frames[0]["osm_candidates_response"]["candidates"][0]["representative_lat"] if frames else 12.97831
+init_lon = frames[0]["osm_candidates_response"]["candidates"][0]["representative_lon"] if frames else 77.60517
+pf_engine = ParticleFilterEngine(num_particles=300, initial_lat=init_lat, initial_lon=init_lon)
 
-# Simulation clock tracking
 simulation_start_time = time.time()
-# Factor to control playback speed (1.0 = real-time delta, 2.0 = double speed, etc.)
 TIME_SCALE = 1.0 
 
 @app.get("/api/state")
@@ -42,34 +39,43 @@ def get_state():
     if not frames:
         return {"status": "completed"}
     
-    # Calculate elapsed virtual simulation time based on real wall-clock time
     elapsed_real_time = (time.time() - simulation_start_time) * TIME_SCALE
-    
-    # Assume each frame is spaced by 2 seconds in your timestamps, or compute relative seconds
-    # For a robust approach, we loop or map elapsed time to frame indices
     total_frames = len(frames)
-    # Map elapsed seconds directly to frame progression (e.g., 1 frame every 2 seconds)
     target_index = int(elapsed_real_time // 2)
     
     if target_index >= total_frames:
-        # Loop simulation or return completed status
         target_index = total_frames - 1
+        est_lat, est_lon, uncertainty = pf_engine.get_estimated_state()
         return {
             "status": "completed",
             "timestamp": frames[-1].get("timestamp"),
-            "vehicle": pf_engine.get_estimated_state() and dict(zip(["lat", "lon", "uncertainty_meters"], pf_engine.get_estimated_state())),
+            "vehicle": {"lat": est_lat, "lon": est_lon, "uncertainty_meters": uncertainty},
             "observation": frames[-1].get("observation")
         }
     
     frame = frames[target_index]
-    motion = frame.get("motion", {"dx_meters": 0.0, "dy_meters": 0.0})
-    observation = frame.get("observation", {"detected": False})
     
-    # Run particle filter prediction and update math
-    pf_engine.predict(motion.get("dx_meters", 0.0), motion.get("dy_meters", 0.0))
-    pf_engine.update(observation.get("detected", False))
+    # Ingest P1, P2, and P3 outputs
+    p1_observation = frame.get("observation", {})
+    p2_osm_response = frame.get("osm_candidates_response", {})
+    
+    # P3 Motion format matching json.dumps output contract
+    p3_motion = frame.get("motion", {
+        "timestamp": round(time.time(), 2),
+        "dx": 0.0,
+        "dy": 0.0,
+        "d_heading": 0.0,
+        "confidence": 0.0
+    })
+
+    # Run particle filter prediction (P3) and update (P1 + P2)
+    pf_engine.predict(p3_motion)
+    pf_engine.update(p1_observation, p2_osm_response)
     
     est_lat, est_lon, uncertainty = pf_engine.get_estimated_state()
+    
+    cue_label = p2_osm_response.get("normalized_text", p1_observation.get("text", "None"))
+    candidates_count = len(p2_osm_response.get("candidates", []))
     
     return {
         "status": "running",
@@ -80,5 +86,9 @@ def get_state():
             "lon": est_lon,
             "uncertainty_meters": uncertainty
         },
-        "observation": observation
+        "observation": {
+            "detected": bool(p2_osm_response.get("candidates")),
+            "cue_text": cue_label
+        },
+        "active_candidates_count": candidates_count
     }

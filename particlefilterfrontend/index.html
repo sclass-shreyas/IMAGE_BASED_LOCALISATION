@@ -136,7 +136,7 @@
 
         <div class="card" style="border-color: rgba(56, 189, 248, 0.3);">
             <span class="card-label">Active Stream Timestamp</span>
-            <span id="timestamp-display" class="metric" style="color: var(--accent-blue); font-size: 15px;">Waiting for packet...</span>
+            <span id="timestamp-display" class="metric" style="color: var(--accent-blue); font-size: 14px;">Waiting for packet...</span>
         </div>
 
         <div class="card">
@@ -150,8 +150,13 @@
         </div>
 
         <div class="card">
-            <span class="card-label">Active Landmark Cue</span>
+            <span class="card-label">Active OSM Candidate (P2)</span>
             <span id="cue-display" class="sub-metric" style="color: #fbbf24; font-weight: bold;">None</span>
+        </div>
+
+        <div class="card">
+            <span class="card-label">Active OSM Candidates Count</span>
+            <span id="candidates-display" class="metric" style="color: var(--accent-blue);">0 nodes</span>
         </div>
     </div>
 
@@ -186,7 +191,6 @@
 
                 let currentTimestamp = data.timestamp;
 
-                // Only update screen metrics and map markers when a new unique timestamp arrives
                 if (currentTimestamp === lastProcessedTimestamp) {
                     return;
                 }
@@ -210,10 +214,10 @@
                     isInitialLoad = false;
                 }
 
-                // Update UI elements with exact stream details
                 document.getElementById('timestamp-display').innerText = currentTimestamp;
                 document.getElementById('coord-display').innerText = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
                 document.getElementById('uncertainty-display').innerText = `${uncertainty.toFixed(2)} meters`;
+                document.getElementById('candidates-display').innerText = `${data.active_candidates_count || 0} nodes`;
                 
                 let cueText = "None";
                 if (data.observation && data.observation.detected) {
@@ -221,7 +225,6 @@
                 }
                 document.getElementById('cue-display').innerText = cueText;
 
-                // Smooth map tracking updates
                 vehicleMarker.setLatLng(newLatLng);
                 uncertaintyCircle.setLatLng(newLatLng);
                 uncertaintyCircle.setRadius(uncertainty);
@@ -234,7 +237,6 @@
             }
         }
 
-        // Fast poll loop checking for new timestamp intervals
         setInterval(pollTelemetry, 400);
         pollTelemetry();
     </script>
