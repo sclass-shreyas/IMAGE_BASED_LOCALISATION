@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AV Localization Telemetry Console | P4</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { margin: 0; font-family: monospace; background: #0f172a; color: #f8fafc; display: flex; height: 100vh; }
+        #sidebar { width: 350px; background: #1e293b; padding: 20px; box-sizing: border-box; border-right: 1px solid #334155; display: flex; flex-direction: column; gap: 15px; }
+        #map { flex-grow: 1; height: 100%; }
+        .card { background: #0f172a; border: 1px solid #334155; padding: 12px; border-radius: 6px; }
+        h2 { margin-top: 0; font-size: 18px; color: #38bdf8; }
+        button { background: #0284c7; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; }
+        button:hover { background: #0369a1; }
+        .metric { font-size: 20px; font-weight: bold; color: #4ade80; }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <h2>P4 Telemetry Console</h2>
+        <div class="card">
+            <div>Current Step</div>
+            <div id="step-display" class="metric">0 / 3</div>
+        </div>
+        <div class="card">
+            <div>Estimated Lat / Lon</div>
+            <div id="coord-display" class="metric" style="font-size: 14px;">12.971600, 77.594600</div>
+        </div>
+        <div class="card">
+            <div>Uncertainty Radius ($\sigma$)</div>
+            <div id="uncertainty-display" class="metric">0.00 m</div>
+        </div>
+        <div class="card">
+            <div>Active Landmark Cue</div>
+            <div id="cue-display" style="color: #fbbf24;">None</div>
+        </div>
+        <button onclick="nextStep()">Step Frame (2s Poll)</button>
+        <button onclick="resetEngine()" style="background: #ef4444;">Reset Engine</button>
+    </div>
+
+    <div id="map"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialize Map centered on Bengaluru
+        const map = L.map('map').setView([12.9716, 77.5946], 16);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        let vehicleMarker = L.marker([12.9716, 77.5946]).addTo(map).bindPopup("Estimated Vehicle Position");
+        let uncertaintyCircle = L.circle([12.9716, 77.5946], {radius: 10, color: '#38bdf8', fillOpacity: 0.2}).addTo(map);
+        let pathLine = L.polyline([], {color: '#ef4444', weight: 3}).addTo(map);
+
+        async function nextStep() {
+            try {
+                let response = await fetch('http://localhost:8000/api/state');
+                let data = await response.json();
+                
+                if (data.status === "completed") {
+                    alert("Simulation sequence finished.");
+                    return;
+                }
+
+                let lat = data.vehicle.lat;
+                let lon = data.vehicle.lon;
+                let uncertainty = data.vehicle.uncertainty_meters;
+
+                // Update UI text
+                document.getElementById('step-display').innerText = `${data.step} / 3`;
+                document.getElementById('coord-display').innerText = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+                document.getElementById('uncertainty-display').innerText = `${uncertainty} meters`;
+                
+                let cueText = "None";
+                if (data.observation && data.observation.detected) {
+                    cueText = data.observation.cue_text || "Cluster Matched";
+                }
+                document.getElementById('cue-display').innerText = cueText;
+
+                // Update Map Elements
+                let newLatLng = [lat, lon];
+                vehicleMarker.setLatLng(newLatLng);
+                uncertaintyCircle.setLatLng(newLatLng);
+                uncertaintyCircle.setRadius(uncertainty);
+                
+                pathLine.addLatLng(newLatLng);
+                map.panTo(newLatLng);
+
+            } catch (err) {
+                console.error("Backend connection failed:", err);
+            }
+        }
+
+        async function resetEngine() {
+            await fetch('http://localhost:8000/api/reset', {method: 'POST'});
+            pathLine.setLatLngs([]);
+            location.reload();
+        }
+
+        // Auto-poll every 2 seconds
+        setInterval(nextStep, 2000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+{
+  "metadata": {
+    "corridor": "MG Road Test Track",
+    "total_steps": 3
+  },
+  "steps": [
+    {
+      "step": 0,
+      "timestamp": "2026-10-21T10:00:00Z",
+      "motion": {
+        "dx": 4.0,
+        "dy": 0.0,
+        "d_heading": 0.0
+      },
+      "observation": {
+        "detected": true,
+        "cue_text": "MG Road Station Sign",
+        "cluster_center": {
+          "lat": 12.9716,
+          "lon": 77.5946
+        },
+        "radius_meters": 25.0,
+        "candidates": [
+          {"lat": 12.9716, "lon": 77.5946},
+          {"lat": 12.9718, "lon": 77.5949}
+        ]
+      }
+    },
+    {
+      "step": 1,
+      "timestamp": "2026-10-21T10:00:02Z",
+      "motion": {
+        "dx": 5.0,
+        "dy": 0.1,
+        "d_heading": 0.001
+      },
+      "observation": {
+        "detected": false
+      }
+    },
+    {
+      "step": 2,
+      "timestamp": "2026-10-21T10:00:04Z",
+      "motion": {
+        "dx": 4.5,
+        "dy": -0.05,
+        "d_heading": 0.002
+      },
+      "observation": {
+        "detected": true,
+        "cue_text": "Trinity Circle Board",
+        "cluster_center": {
+          "lat": 12.9735,
+          "lon": 77.6080
+        },
+        "radius_meters": 25.0,
+        "candidates": [
+          {"lat": 12.9735, "lon": 77.6080},
+          {"lat": 12.9737, "lon": 77.6082}
+        ]
+      }
+    }
+  ]
+}
