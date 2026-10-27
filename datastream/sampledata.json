@@ -2,58 +2,109 @@
   "sequence_metadata": {
     "location": "MG Road, Bengaluru",
     "crs": "EPSG:32643",
-    "total_steps": 3
+    "description": "Autonomous vehicle visual-inertial localization stream with landmark cues"
   },
   "frames": [
     {
-      "step": 1,
+      "timestamp": "2026-10-27T10:00:00Z",
       "ground_truth": {
         "lat": 12.975610,
         "lon": 77.606620
       },
       "motion": {
-        "dx_meters": 4.5,
-        "dy_meters": 1.2,
+        "dx_meters": 0.0,
+        "dy_meters": 0.0,
         "heading_rad": 0.15
       },
       "observation": {
         "detected": true,
-        "cue_text": "Metro Station Pillar Alpha",
-        "landmark_id": "MG_RD_01"
+        "cue_text": "MG Road Metro Station Pillar Alpha",
+        "landmark_id": "MGRD_BLR_01"
       }
     },
     {
-      "step": 2,
+      "timestamp": "2026-10-27T10:00:02Z",
       "ground_truth": {
-        "lat": 12.975820,
-        "lon": 77.607840
+        "lat": 12.975720,
+        "lon": 77.607210
       },
       "motion": {
-        "dx_meters": 5.1,
-        "dy_meters": 1.4,
-        "heading_rad": 0.18
+        "dx_meters": 5.2,
+        "dy_meters": 1.1,
+        "heading_rad": 0.16
       },
       "observation": {
         "detected": true,
-        "cue_text": "Commercial Complex Facade",
-        "landmark_id": "MG_RD_02"
+        "cue_text": "Commercial Retail Facade Marker",
+        "landmark_id": "MGRD_BLR_02"
       }
     },
     {
-      "step": 3,
+      "timestamp": "2026-10-27T10:00:04Z",
       "ground_truth": {
-        "lat": 12.976050,
-        "lon": 77.609100
+        "lat": 12.975850,
+        "lon": 77.607900
       },
       "motion": {
-        "dx_meters": 4.8,
-        "dy_meters": 1.1,
-        "heading_rad": 0.16
+        "dx_meters": 6.1,
+        "dy_meters": 1.4,
+        "heading_rad": 0.17
       },
       "observation": {
         "detected": false,
         "cue_text": "None",
         "landmark_id": null
+      }
+    },
+    {
+      "timestamp": "2026-10-27T10:00:06Z",
+      "ground_truth": {
+        "lat": 12.975960,
+        "lon": 77.608550
+      },
+      "motion": {
+        "dx_meters": 5.8,
+        "dy_meters": 0.9,
+        "heading_rad": 0.15
+      },
+      "observation": {
+        "detected": true,
+        "cue_text": "Trinity Church Junction Signage Cluster",
+        "landmark_id": "MGRD_BLR_03"
+      }
+    },
+    {
+      "timestamp": "2026-10-27T10:00:08Z",
+      "ground_truth": {
+        "lat": 12.976090,
+        "lon": 77.609240
+      },
+      "motion": {
+        "dx_meters": 6.0,
+        "dy_meters": 1.2,
+        "heading_rad": 0.18
+      },
+      "observation": {
+        "detected": false,
+        "cue_text": "None",
+        "landmark_id": null
+      }
+    },
+    {
+      "timestamp": "2026-10-27T10:00:10Z",
+      "ground_truth": {
+        "lat": 12.976210,
+        "lon": 77.609910
+      },
+      "motion": {
+        "dx_meters": 5.9,
+        "dy_meters": 1.0,
+        "heading_rad": 0.16
+      },
+      "observation": {
+        "detected": true,
+        "cue_text": "Public Transit Bus Stop Shelter",
+        "landmark_id": "MGRD_BLR_04"
       }
     }
   ]

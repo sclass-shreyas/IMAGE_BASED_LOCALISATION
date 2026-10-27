@@ -2,41 +2,157 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AV Localization Telemetry Console | P4</title>
+    <title>Autonomous Vehicle Live Telemetry | P4 Console</title>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { margin: 0; font-family: monospace; background: #0f172a; color: #f8fafc; display: flex; height: 100vh; overflow: hidden; }
-        #sidebar { width: 320px; background: #1e293b; padding: 20px; box-sizing: border-box; border-right: 1px solid #334155; display: flex; flex-direction: column; gap: 15px; z-index: 1000; }
-        #map { flex-grow: 1; height: 100%; background: #0b0f19; }
-        .card { background: #0f172a; border: 1px solid #334155; padding: 12px; border-radius: 6px; }
-        h2 { margin-top: 0; font-size: 18px; color: #38bdf8; }
-        button { background: #0284c7; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; transition: background 0.2s; }
-        button:hover { background: #0369a1; }
-        .metric { font-size: 18px; font-weight: bold; color: #4ade80; }
+        :root {
+            --bg-main: #0b0f19;
+            --sidebar-bg: #111827;
+            --card-bg: #1f2937;
+            --border-color: #374151;
+            --accent-blue: #38bdf8;
+            --accent-green: #4ade80;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-main);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #sidebar {
+            width: 380px;
+            background: var(--sidebar-bg);
+            padding: 24px;
+            box-sizing: border-box;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            z-index: 1000;
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        h2 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+        }
+
+        .live-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(74, 222, 128, 0.1);
+            color: var(--accent-green);
+            padding: 4px 8px;
+            border-radius: 12px;
+            border: 1px solid rgba(74, 222, 128, 0.2);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-green);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 12px var(--accent-green); }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 14px 16px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .card-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent-green);
+            font-family: monospace;
+        }
+
+        .sub-metric {
+            font-size: 13px;
+            color: var(--text-main);
+            font-family: monospace;
+        }
+
+        #map {
+            flex-grow: 1;
+            height: 100%;
+            background: var(--bg-main);
+        }
     </style>
 </head>
 <body>
 
     <div id="sidebar">
-        <h2>P4 Telemetry Console</h2>
-        <div class="card">
-            <div>Current Step</div>
-            <div id="step-display" class="metric">0 / 3</div>
+        <div class="header-container">
+            <h2>P4 Telemetry HUD</h2>
+            <div class="live-badge">
+                <div class="pulse-dot"></div>
+                LIVE STREAM
+            </div>
         </div>
-        <div class="card">
-            <div>Estimated Lat / Lon</div>
-            <div id="coord-display" class="metric" style="font-size: 13px;">Waiting for telemetry...</div>
+
+        <div class="card" style="border-color: rgba(56, 189, 248, 0.3);">
+            <span class="card-label">Active Stream Timestamp</span>
+            <span id="timestamp-display" class="metric" style="color: var(--accent-blue); font-size: 15px;">Waiting for packet...</span>
         </div>
+
         <div class="card">
-            <div>Uncertainty Radius ($\sigma$)</div>
-            <div id="uncertainty-display" class="metric">0.00 m</div>
+            <span class="card-label">Estimated Coordinates</span>
+            <span id="coord-display" class="sub-metric">Acquiring GPS lock...</span>
         </div>
+
         <div class="card">
-            <div>Active Landmark Cue</div>
-            <div id="cue-display" style="color: #fbbf24;">None</div>
+            <span class="card-label">Localization Uncertainty ($\sigma$)</span>
+            <span id="uncertainty-display" class="metric">0.00 m</span>
         </div>
-        <button onclick="resetEngine()" style="background: #ef4444;">Reset Engine</button>
+
+        <div class="card">
+            <span class="card-label">Active Landmark Cue</span>
+            <span id="cue-display" class="sub-metric" style="color: #fbbf24; font-weight: bold;">None</span>
+        </div>
     </div>
 
     <div id="map"></div>
@@ -44,11 +160,9 @@
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Initialize map without hardcoded centers; bounds will lock on first API payload
         const map = L.map('map', { zoomControl: false });
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        // Add standard slippy tile layer (fully movable like Google Maps)
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap contributors'
@@ -57,6 +171,7 @@
         let vehicleMarker = null;
         let uncertaintyCircle = null;
         let pathLine = L.polyline([], {color: '#38bdf8', weight: 4, opacity: 0.8}).addTo(map);
+        let lastProcessedTimestamp = null;
         let isInitialLoad = true;
 
         async function pollTelemetry() {
@@ -65,25 +180,38 @@
                 let data = await response.json();
                 
                 if (data.status === "completed") {
-                    console.info("Simulation sequence finished.");
+                    console.info("Simulation stream finished.");
                     return;
                 }
+
+                let currentTimestamp = data.timestamp;
+
+                // Only update screen metrics and map markers when a new unique timestamp arrives
+                if (currentTimestamp === lastProcessedTimestamp) {
+                    return;
+                }
+                lastProcessedTimestamp = currentTimestamp;
 
                 let lat = data.vehicle.lat;
                 let lon = data.vehicle.lon;
                 let uncertainty = data.vehicle.uncertainty_meters;
                 let newLatLng = [lat, lon];
 
-                // Dynamically initialize markers and auto-zoom on the very first valid data point
                 if (isInitialLoad) {
-                    map.setView(newLatLng, 17); // Appropriate close-up zoom for urban navigation
-                    vehicleMarker = L.marker(newLatLng).addTo(map).bindPopup("Vehicle Estimated Position");
-                    uncertaintyCircle = L.circle(newLatLng, {radius: uncertainty, color: '#38bdf8', fillColor: '#38bdf8', fillOpacity: 0.15}).addTo(map);
+                    map.setView(newLatLng, 17);
+                    vehicleMarker = L.marker(newLatLng).addTo(map).bindPopup("AV Estimated Position");
+                    uncertaintyCircle = L.circle(newLatLng, {
+                        radius: uncertainty, 
+                        color: '#38bdf8', 
+                        fillColor: '#38bdf8', 
+                        fillOpacity: 0.15,
+                        weight: 1.5
+                    }).addTo(map);
                     isInitialLoad = false;
                 }
 
-                // Update Sidebar UI metrics
-                document.getElementById('step-display').innerText = `${data.step} / 3`;
+                // Update UI elements with exact stream details
+                document.getElementById('timestamp-display').innerText = currentTimestamp;
                 document.getElementById('coord-display').innerText = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
                 document.getElementById('uncertainty-display').innerText = `${uncertainty.toFixed(2)} meters`;
                 
@@ -93,13 +221,12 @@
                 }
                 document.getElementById('cue-display').innerText = cueText;
 
-                // Update Map Elements smoothly
+                // Smooth map tracking updates
                 vehicleMarker.setLatLng(newLatLng);
                 uncertaintyCircle.setLatLng(newLatLng);
                 uncertaintyCircle.setRadius(uncertainty);
                 pathLine.addLatLng(newLatLng);
                 
-                // Smoothly pan map to follow tracking target
                 map.panTo(newLatLng, {animate: true});
 
             } catch (err) {
@@ -107,16 +234,8 @@
             }
         }
 
-        async function resetEngine() {
-            await fetch('http://localhost:8000/api/reset', {method: 'POST'});
-            pathLine.setLatLngs([]);
-            isInitialLoad = true;
-            location.reload();
-        }
-
-        // Automatic polling every 2 seconds
-        setInterval(pollTelemetry, 2000);
-        // Fire immediately on load
+        // Fast poll loop checking for new timestamp intervals
+        setInterval(pollTelemetry, 400);
         pollTelemetry();
     </script>
 </body>
