@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Autonomous Vehicle Live Telemetry | P4 Console</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root {
+            --bg-main: #0b0f19;
+            --sidebar-bg: #111827;
+            --card-bg: #1f2937;
+            --border-color: #374151;
+            --accent-blue: #38bdf8;
+            --accent-green: #4ade80;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-main);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #sidebar {
+            width: 380px;
+            background: var(--sidebar-bg);
+            padding: 24px;
+            box-sizing: border-box;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            z-index: 1000;
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        h2 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+        }
+
+        .live-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(74, 222, 128, 0.1);
+            color: var(--accent-green);
+            padding: 4px 8px;
+            border-radius: 12px;
+            border: 1px solid rgba(74, 222, 128, 0.2);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-green);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 12px var(--accent-green); }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 14px 16px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .card-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent-green);
+            font-family: monospace;
+        }
+
+        .sub-metric {
+            font-size: 13px;
+            color: var(--text-main);
+            font-family: monospace;
+        }
+
+        #map {
+            flex-grow: 1;
+            height: 100%;
+            background: var(--bg-main);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <div class="header-container">
+            <h2>P4 Telemetry HUD</h2>
+            <div class="live-badge">
+                <div class="pulse-dot"></div>
+                LIVE STREAM
+            </div>
+        </div>
+
+        <div class="card" style="border-color: rgba(56, 189, 248, 0.3);">
+            <span class="card-label">Active Stream Timestamp</span>
+            <span id="timestamp-display" class="metric" style="color: var(--accent-blue); font-size: 14px;">Waiting for packet...</span>
+        </div>
+
+        <div class="card">
+            <span class="card-label">Estimated Coordinates</span>
+            <span id="coord-display" class="sub-metric">Acquiring GPS lock...</span>
+        </div>
+
+        <div class="card">
+            <span class="card-label">Localization Uncertainty ($\sigma$)</span>
+            <span id="uncertainty-display" class="metric">0.00 m</span>
+        </div>
+
+        <div class="card">
+            <span class="card-label">Active OSM Candidate (P2)</span>
+            <span id="cue-display" class="sub-metric" style="color: #fbbf24; font-weight: bold;">None</span>
+        </div>
+
+        <div class="card">
+            <span class="card-label">Active OSM Candidates Count</span>
+            <span id="candidates-display" class="metric" style="color: var(--accent-blue);">0 nodes</span>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map', { zoomControl: false });
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        let vehicleMarker = null;
+        let uncertaintyCircle = null;
+        let pathLine = L.polyline([], {color: '#38bdf8', weight: 4, opacity: 0.8}).addTo(map);
+        let lastProcessedTimestamp = null;
+        let isInitialLoad = true;
+
+        async function pollTelemetry() {
+            try {
+                let response = await fetch('http://localhost:8000/api/state');
+                let data = await response.json();
+                
+                if (data.status === "completed") {
+                    console.info("Simulation stream finished.");
+                    return;
+                }
+
+                let currentTimestamp = data.timestamp;
+
+                if (currentTimestamp === lastProcessedTimestamp) {
+                    return;
+                }
+                lastProcessedTimestamp = currentTimestamp;
+
+                let lat = data.vehicle.lat;
+                let lon = data.vehicle.lon;
+                let uncertainty = data.vehicle.uncertainty_meters;
+                let newLatLng = [lat, lon];
+
+                if (isInitialLoad) {
+                    map.setView(newLatLng, 17);
+                    vehicleMarker = L.marker(newLatLng).addTo(map).bindPopup("AV Estimated Position");
+                    uncertaintyCircle = L.circle(newLatLng, {
+                        radius: uncertainty, 
+                        color: '#38bdf8', 
+                        fillColor: '#38bdf8', 
+                        fillOpacity: 0.15,
+                        weight: 1.5
+                    }).addTo(map);
+                    isInitialLoad = false;
+                }
+
+                document.getElementById('timestamp-display').innerText = currentTimestamp;
+                document.getElementById('coord-display').innerText = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+                document.getElementById('uncertainty-display').innerText = `${uncertainty.toFixed(2)} meters`;
+                document.getElementById('candidates-display').innerText = `${data.active_candidates_count || 0} nodes`;
+                
+                let cueText = "None";
+                if (data.observation && data.observation.detected) {
+                    cueText = data.observation.cue_text || "Cluster Matched";
+                }
+                document.getElementById('cue-display').innerText = cueText;
+
+                vehicleMarker.setLatLng(newLatLng);
+                uncertaintyCircle.setLatLng(newLatLng);
+                uncertaintyCircle.setRadius(uncertainty);
+                pathLine.addLatLng(newLatLng);
+                
+                map.panTo(newLatLng, {animate: true});
+
+            } catch (err) {
+                console.error("Backend connection failed:", err);
+            }
+        }
+
+        setInterval(pollTelemetry, 400);
+        pollTelemetry();
+    </script>
+</body>
+</html>
