@@ -11,6 +11,8 @@ class LiveCameraRuntime:
         self._lock = Lock()
         self._stop = Event()
         self._thread = None
+        self._preview_lock = Lock()
+        self._preview_jpeg = None
         self._status = {"status": "idle", "camera_index": 0}
 
     def start(self, camera_index=0, backend="dshow", device="GPU", interval_s=0.5):
@@ -49,6 +51,32 @@ class LiveCameraRuntime:
     def status(self):
         with self._lock:
             return dict(self._status)
+
+    def preview_jpeg(self):
+        """Return the latest annotated OCR frame, if a live camera is running."""
+        with self._preview_lock:
+            return self._preview_jpeg
+
+    def _publish_preview(self, frame, detections, responses):
+        import cv2
+        import numpy as np
+
+        preview = frame.copy()
+        for detection, response in zip(detections, responses):
+            points = np.asarray(detection["bbox_pixels"], dtype=np.int32)
+            matched = bool(response.get("candidates")) and response.get("cue_status") == "street_name_candidate"
+            color = (40, 210, 80) if matched else (30, 170, 255)
+            cv2.polylines(preview, [points], True, color, 2)
+            text = f"{detection['text']} ({detection['confidence']:.2f})"
+            x = max(4, int(points[:, 0].min()))
+            y = max(22, int(points[:, 1].min()) - 7)
+            cv2.putText(preview, text, (x, y), cv2.FONT_HERSHEY_SIMPLEX,
+                        0.62, color, 2, cv2.LINE_AA)
+
+        ok, encoded = cv2.imencode(".jpg", preview, [cv2.IMWRITE_JPEG_QUALITY, 82])
+        if ok:
+            with self._preview_lock:
+                self._preview_jpeg = encoded.tobytes()
 
     @staticmethod
     def _empty_response(cue, status):
@@ -130,6 +158,8 @@ class LiveCameraRuntime:
                     observations.append(cue)
                     candidate_responses.append(response)
 
+                self._publish_preview(frame, detections, candidate_responses)
+
                 frame_packet = {"frame_id": frame_id, "timestamp_s": timestamp_s,
                                 "observations": observations,
                                 "osm_candidates_responses": candidate_responses,
@@ -148,6 +178,8 @@ class LiveCameraRuntime:
         finally:
             if capture is not None:
                 capture.release()
+            with self._preview_lock:
+                self._preview_jpeg = None
             with self._lock:
                 if self._stop.is_set() and self._status.get("status") != "failed":
                     self._status["status"] = "stopped"

@@ -6,6 +6,7 @@ osmnx
 rapidfuzz
 shapely
 geopandas
+pandas==2.2.3
 pyproj
 folium
 networkx

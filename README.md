@@ -27,7 +27,7 @@ Run `python openvino_webcam_test.py --help` to see all options.
 
 ## Live campus localization
 
-The live coordinator uses camera index `0` (the built-in webcam). It captures a
+The live coordinator captures a
 shared session-relative clock, runs OpenVINO OCR, rejects low-confidence/generic or weakly
 matched text, queries the configured RVCE OSM data, and submits each observation to
 the particle filter. Person 2 searches both named roads and named OSM building
@@ -36,16 +36,20 @@ without loading any sample stream, and refuses streams marked as synthetic. If a
 campus sign uses a name different from OSM, add a verified mapping in
 `FEATURE_NAME_ALIASES` in `config.py`.
 
+Start the local API and frontend together:
+
 ```powershell
-uvicorn particlefilterbackend.engine:app --host 127.0.0.1 --port 8000
+.venv\Scripts\python.exe -m uvicorn particlefilterbackend.engine:app --host 127.0.0.1 --port 8000
 ```
 
-Open `particlefilterfrontend/index.html`, select the OpenVINO GPU or CPU, then click
-**Start camera 0**. `/api/live/start` can also be called directly; it defaults to
-`camera_index=0`. Check
+Open `http://127.0.0.1:8000/` (do not open the HTML as a `file://` URL), choose a
+camera index and OpenVINO device, then click **Start camera**. The dashboard shows
+an annotated camera preview with detected text boxes. Serving the page over HTTP
+also lets the browser send the referrer required by the OpenStreetMap tile server.
+`/api/live/start` can also be called directly; it defaults to `camera_index=0`. Check
 `/api/live/status` for camera/model errors; `/api/state` returns the latest OCR cue
 and estimate. Stop the camera with the UI button or `POST /api/live/stop`. Do not run
-the standalone OCR program at the same time, since it would contend for camera 1.
+the standalone OCR program at the same time, since it would contend for the selected camera.
 
 The filter uses OCR-to-OSM road candidates as absolute map observations. Optical-flow
 `dx_px`/`dy_px` are retained as relative image measurements and are never converted

@@ -4,8 +4,9 @@ import os
 from pathlib import Path
 from threading import RLock
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from .particlefilter import ParticleFilterEngine
 
@@ -232,6 +233,15 @@ def live_status():
     return live_runtime.status()
 
 
+@app.get("/api/live/preview.jpg")
+def live_preview():
+    frame = live_runtime.preview_jpeg()
+    if frame is None:
+        raise HTTPException(status_code=503, detail="No live camera preview is available")
+    return Response(content=frame, media_type="image/jpeg",
+                    headers={"Cache-Control": "no-store, no-cache, must-revalidate"})
+
+
 @app.post("/api/replay/start")
 def start_replay():
     try:
@@ -239,3 +249,8 @@ def start_replay():
         return session.begin_replay(load_datastream())
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+# Serve the UI from the same localhost origin as the API. This gives browser
+# map tile requests a normal HTTP Referer instead of a file:// origin.
+app.mount("/", StaticFiles(directory=BASE_DIR / "particlefilterfrontend", html=True), name="frontend")

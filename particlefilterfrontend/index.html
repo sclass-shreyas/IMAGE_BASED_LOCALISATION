@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>Autonomous Vehicle Live Telemetry | P4 Console</title>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -123,10 +124,65 @@
             font-family: monospace;
         }
 
-        #map {
-            flex-grow: 1;
+        #map-panel {
+            flex: 1;
             height: 100%;
+            min-width: 0;
             background: var(--bg-main);
+            position: relative;
+        }
+
+        #map { width: 100%; height: 100%; background: var(--bg-main); }
+
+        #camera-preview {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            z-index: 1000;
+            width: min(42vw, 500px);
+            min-width: 240px;
+            min-height: 150px;
+            max-width: calc(100% - 16px);
+            max-height: calc(100% - 16px);
+            resize: both;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            border-radius: 9px;
+            background: rgba(17, 24, 39, 0.96);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+        }
+
+        #camera-preview-header {
+            padding: 8px 12px;
+            color: var(--text-muted);
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            cursor: move;
+            touch-action: none;
+            user-select: none;
+        }
+
+        #camera-feed, #camera-placeholder {
+            display: block;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            object-fit: contain;
+            background: #05070b;
+        }
+
+        #camera-placeholder {
+            box-sizing: border-box;
+            padding: 18px;
+            color: var(--text-muted);
+            font: 13px monospace;
+        }
+
+        [hidden] { display: none !important; }
+
+        @media (max-width: 760px) {
+            #sidebar { width: 300px; padding: 14px; }
+            #camera-preview { width: min(55vw, 360px); top: 8px; right: 8px; }
         }
     </style>
 </head>
@@ -142,9 +198,13 @@
         </div>
 
         <div class="controls">
-            <button id="start-live">Start camera 0</button>
+            <button id="start-live">Start camera</button>
             <button id="stop-live">Stop</button>
         </div>
+        <select id="camera-index" aria-label="Camera index">
+            <option value="0">Camera 0</option>
+            <option value="1" selected>Camera 1</option>
+        </select>
         <select id="openvino-device" aria-label="OpenVINO device">
             <option value="GPU">OpenVINO GPU</option>
             <option value="CPU">OpenVINO CPU</option>
@@ -176,13 +236,21 @@
         </div>
     </div>
 
-    <div id="map"></div>
+    <div id="map-panel">
+        <div id="map"></div>
+        <div id="camera-preview">
+            <div id="camera-preview-header">Live camera · OCR boxes · drag header / resize corner</div>
+            <img id="camera-feed" alt="Live camera frame with OCR detections" hidden>
+            <div id="camera-placeholder">Camera preview appears here when the live session starts.</div>
+        </div>
+    </div>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const map = L.map('map', { zoomControl: false });
         L.control.zoom({ position: 'bottomright' }).addTo(map);
+        map.setView([12.923760, 77.499689], 16);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
@@ -193,12 +261,67 @@
         let uncertaintyCircle = null;
         let pathLine = L.polyline([], {color: '#38bdf8', weight: 4, opacity: 0.8}).addTo(map);
         let isInitialLoad = true;
+        const cameraFeed = document.getElementById('camera-feed');
+        const cameraPlaceholder = document.getElementById('camera-placeholder');
+        const cameraPreview = document.getElementById('camera-preview');
+        const cameraPreviewHeader = document.getElementById('camera-preview-header');
+        const mapPanel = document.getElementById('map-panel');
+        let previewDrag = null;
+
+        cameraPreviewHeader.addEventListener('pointerdown', (event) => {
+            if (event.button !== 0) return;
+            const panelRect = cameraPreview.getBoundingClientRect();
+            const parentRect = mapPanel.getBoundingClientRect();
+            cameraPreview.style.left = `${panelRect.left - parentRect.left}px`;
+            cameraPreview.style.top = `${panelRect.top - parentRect.top}px`;
+            cameraPreview.style.right = 'auto';
+            previewDrag = {
+                pointerId: event.pointerId,
+                offsetX: event.clientX - panelRect.left,
+                offsetY: event.clientY - panelRect.top,
+            };
+            cameraPreviewHeader.setPointerCapture(event.pointerId);
+            event.preventDefault();
+        });
+
+        cameraPreviewHeader.addEventListener('pointermove', (event) => {
+            if (!previewDrag || event.pointerId !== previewDrag.pointerId) return;
+            const parentRect = mapPanel.getBoundingClientRect();
+            const maxLeft = Math.max(0, mapPanel.clientWidth - cameraPreview.offsetWidth);
+            const maxTop = Math.max(0, mapPanel.clientHeight - cameraPreview.offsetHeight);
+            const left = Math.min(maxLeft, Math.max(0, event.clientX - parentRect.left - previewDrag.offsetX));
+            const top = Math.min(maxTop, Math.max(0, event.clientY - parentRect.top - previewDrag.offsetY));
+            cameraPreview.style.left = `${left}px`;
+            cameraPreview.style.top = `${top}px`;
+        });
+
+        function endPreviewDrag(event) {
+            if (previewDrag && event.pointerId === previewDrag.pointerId) previewDrag = null;
+        }
+        cameraPreviewHeader.addEventListener('pointerup', endPreviewDrag);
+        cameraPreviewHeader.addEventListener('pointercancel', endPreviewDrag);
+
+        function updateCameraPreview(status) {
+            if (status === 'running') {
+                cameraPlaceholder.hidden = true;
+                cameraFeed.hidden = false;
+                cameraFeed.src = `/api/live/preview.jpg?t=${Date.now()}`;
+            } else {
+                cameraFeed.hidden = true;
+                cameraFeed.removeAttribute('src');
+                cameraPlaceholder.hidden = false;
+                cameraPlaceholder.innerText = status === 'failed'
+                    ? 'Camera preview unavailable. Check the live status for the error.'
+                    : 'Camera preview appears here when the live session starts.';
+            }
+        }
 
         async function pollTelemetry() {
             try {
-                let response = await fetch('http://localhost:8000/api/state');
+                let response = await fetch('/api/state');
                 let data = await response.json();
                 const status = data.camera_status || data.status || "idle";
+                updateCameraPreview(status);
                 const cameraLabel = data.camera_index !== undefined ? ` · CAM ${data.camera_index}` : "";
                 document.getElementById('live-status').innerText = `${status.toUpperCase()}${cameraLabel}`;
                 let currentTimestamp = `${data.timestamp_s?.toFixed(2) ?? "--"} s`;
@@ -260,7 +383,8 @@
                 uncertaintyCircle = null;
                 isInitialLoad = true;
                 const device = document.getElementById('openvino-device').value;
-                const response = await fetch(`http://localhost:8000/api/live/start?camera_index=0&device=${device}`, { method: 'POST' });
+                const cameraIndex = document.getElementById('camera-index').value;
+                const response = await fetch(`/api/live/start?camera_index=${cameraIndex}&backend=dshow&device=${device}`, { method: 'POST' });
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.detail || "Could not start live camera");
                 document.getElementById('live-status').innerText = data.status.toUpperCase();
@@ -272,12 +396,12 @@
 
         document.getElementById('stop-live').addEventListener('click', async () => {
             try {
-                await fetch('http://localhost:8000/api/live/stop', { method: 'POST' });
+                await fetch('/api/live/stop', { method: 'POST' });
                 pollTelemetry();
             } catch (err) { console.error(err); }
         });
 
-        setInterval(pollTelemetry, 1200);
+        setInterval(pollTelemetry, 500);
         document.getElementById('live-status').innerText = "READY · CAMERA 1";
     </script>
 </body>
