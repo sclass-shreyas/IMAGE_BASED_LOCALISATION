@@ -5,14 +5,13 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 OSM_CACHE_DIR = PROJECT_ROOT / "data" / "osm"
 
-# ---- TEST AREA ----------------------------------------------------------
-# PLACEHOLDER until the team chooses the corridor. Change only this block.
-# A centre point (lat, lon) and a radius in metres.
-AREA_CENTER = (12.9716, 77.5946)   # placeholder, replace with the chosen corridor
-AREA_RADIUS_M = 2500               # roughly a 5 km-wide area
+# ---- TEST AREA: RV College of Engineering, Bengaluru ---------------------
+# Starting point from Wikipedia; replace with the middle of the campus from Google Maps if it differs.
+AREA_CENTER = (12.923760000292681, 77.49968865500958)   # (lat, lon)
+AREA_RADIUS_M = 1000               # campus plus the surrounding roads (e.g. Mysore Road)
 
 # Name used in the cache filename, so different areas don't overwrite each other
-AREA_NAME = "placeholder_area"
+AREA_NAME = "rvce_v1"
 # -------------------------------------------------------------------------
 
 # Matching settings
@@ -25,3 +24,7 @@ CLUSTER_GAP_M = 25       # same-named segments closer than this belong to one st
 # Output settings
 MAX_PIECES_TOTAL = 30    # max candidates returned per cue (output reports if it was truncated)
 AMBIGUITY_MARGIN = 0.05  # candidates within this score of the best count as competing
+
+# Optional aliases for signs whose wording differs from the OSM building name.
+# Keys must be the exact OSM feature name; values are recognized sign variants.
+FEATURE_NAME_ALIASES = {}

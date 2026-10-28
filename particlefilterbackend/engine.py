@@ -1,94 +1,241 @@
+"""FastAPI adapter for a timestamp-ordered localization replay session."""
 import json
-import time
+import os
 from pathlib import Path
-from fastapi import FastAPI
+from threading import RLock
+
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+
 from .particlefilter import ParticleFilterEngine
 
-app = FastAPI(title="P4 Integrated Telemetry Localization Engine")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app = FastAPI(title="Integrated Telemetry Localization Engine")
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True,
+                   allow_methods=["*"], allow_headers=["*"])
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DATA_PATH = BASE_DIR / "datastream" / "sampledata.json"
+DATA_PATH = Path(os.environ["LOCALIZATION_DATASTREAM"]) if os.environ.get("LOCALIZATION_DATASTREAM") else None
 
-def load_datastream():
-    if not DATA_PATH.exists():
-        raise FileNotFoundError(f"Data stream file not found at {DATA_PATH}")
-    with open(DATA_PATH, "r") as f:
-        return json.load(f)
 
-dataset = load_datastream()
-frames = dataset.get("frames", [])
+def load_datastream(path=None):
+    path = path or DATA_PATH
+    if path is None:
+        raise ValueError("Set LOCALIZATION_DATASTREAM to an explicitly selected real session stream")
+    with open(path, "r", encoding="utf-8") as stream:
+        data = json.load(stream)
+    if data.get("sequence_metadata", {}).get("demo_only") or data.get("metadata", {}).get("demo_only"):
+        raise ValueError("Synthetic/demo streams are disabled for localization replay")
+    frames = data.get("frames", [])
+    if not isinstance(frames, list):
+        raise ValueError("datastream frames must be a list")
+    return data
 
-init_lat = frames[0]["osm_candidates_response"]["candidates"][0]["representative_lat"] if frames else 12.97831
-init_lon = frames[0]["osm_candidates_response"]["candidates"][0]["representative_lon"] if frames else 77.60517
-pf_engine = ParticleFilterEngine(num_particles=300, initial_lat=init_lat, initial_lon=init_lon)
 
-simulation_start_time = time.time()
-TIME_SCALE = 1.0 
+class LocalizationSession:
+    """Normalize legacy frames, process each timestamp once, expose latest state."""
+    def __init__(self, dataset=None, seed=0):
+        self.lock = RLock()
+        self.dataset = dataset or {"session_id": "unstarted", "frames": []}
+        self.frames = sorted(self.dataset.get("frames", []), key=self._timestamp)
+        self.filter = ParticleFilterEngine(seed=seed)
+        self.cursor = 0
+        self.mode = "idle"
+        self.has_location_update = False
+        self.latest = {"status": "ready", "session_id": self.dataset.get("session_id", "demo"),
+                       "frame_index": 0, "timestamp_s": None, "vehicle": None,
+                       "observation": {"status": "waiting", "cue_text": None, "candidate_count": 0}}
+
+    @staticmethod
+    def _timestamp(frame):
+        value = frame.get("timestamp_s")
+        if value is None:
+            value = frame.get("osm_candidates_response", {}).get("timestamp_s")
+        if value is None:
+            raise ValueError("each frame needs timestamp_s (seconds since session start)")
+        return float(value)
+
+    def reset(self, seed=0):
+        with self.lock:
+            self.filter.reset(seed)
+            self.cursor = 0
+            self.mode = "idle"
+            self.has_location_update = False
+            self.latest = {"status": "ready", "session_id": self.dataset.get("session_id", "demo"),
+                           "frame_index": 0, "timestamp_s": None, "vehicle": None,
+                           "observation": {"status": "waiting", "cue_text": None, "candidate_count": 0}}
+            return self.latest
+
+    def begin_live(self, session_id):
+        with self.lock:
+            self.filter.reset()
+            self.dataset = {"session_id": session_id, "frames": []}
+            self.frames = []
+            self.cursor = 0
+            self.mode = "live"
+            self.has_location_update = False
+            self.latest = {"status": "starting", "mode": "live", "session_id": session_id,
+                           "frame_index": 0, "timestamp_s": None, "vehicle": None,
+                           "observation": {"status": "waiting", "cue_text": None, "candidate_count": 0}}
+            return self.latest
+
+    def begin_replay(self, dataset):
+        with self.lock:
+            self.filter.reset()
+            self.dataset = dataset
+            self.frames = sorted(dataset.get("frames", []), key=self._timestamp)
+            self.cursor = 0
+            self.mode = "replay"
+            self.has_location_update = False
+            self.latest = {"status": "ready", "mode": "replay",
+                           "session_id": dataset.get("session_id", "replay"),
+                           "frame_index": 0, "timestamp_s": None, "vehicle": None,
+                           "observation": {"status": "waiting", "cue_text": None, "candidate_count": 0}}
+            return self.latest
+
+    def ingest_live(self, frame):
+        with self.lock:
+            if self.mode != "live":
+                raise ValueError("live session has not been started")
+            self.frames.append(frame)
+            return self.advance()
+
+    def advance(self):
+        with self.lock:
+            if self.mode not in ("replay", "live"):
+                raise ValueError("start a live session or replay before advancing")
+            if self.cursor >= len(self.frames):
+                self.latest["status"] = "completed"
+                return self.latest
+            frame = self.frames[self.cursor]
+            timestamp_s = self._timestamp(frame)
+            if self.filter.last_timestamp_s is not None and timestamp_s < self.filter.last_timestamp_s:
+                raise ValueError("frames must be processed in non-decreasing timestamp order")
+            dt = 0.0 if self.filter.last_timestamp_s is None else timestamp_s - self.filter.last_timestamp_s
+            motion = frame.get("motion", {})
+            route_delta_m = frame.get("route_delta_m")
+            self.filter.predict(motion, dt=dt, route_delta_m=route_delta_m)
+            observations = frame.get("observations")
+            candidates_list = frame.get("osm_candidates_responses")
+            if observations is None:
+                observations = [frame.get("observation", {})]
+                candidates_list = [frame.get("osm_candidates_response", {})]
+            if len(observations) != len(candidates_list or []):
+                raise ValueError("each OCR observation must have exactly one OSM candidate response")
+            diagnostics = [self.filter.update(observation, candidates)
+                           for observation, candidates in zip(observations, candidates_list or [])]
+            if not diagnostics:
+                diagnostics = [self.filter.update({}, {})]
+            if any(item["status"] in ("matched", "ambiguous_used") for item in diagnostics):
+                self.has_location_update = True
+            self.filter.last_timestamp_s = timestamp_s
+            lat, lon, uncertainty = self.filter.get_estimated_state()
+            status = next((item["status"] for item in reversed(diagnostics)
+                           if item["status"] != "no_candidates"), "no_candidates")
+            cue_texts = [candidate.get("normalized_text") or observation.get("text")
+                         for observation, candidate in zip(observations, candidates_list or [])]
+            candidate_count = sum(len(candidate.get("candidates", [])) for candidate in candidates_list or [])
+            matched_candidates = []
+            seen_candidate_ids = set()
+            for candidate_response in candidates_list or []:
+                for candidate in candidate_response.get("candidates", []):
+                    if candidate.get("candidate_id") not in seen_candidate_ids:
+                        seen_candidate_ids.add(candidate.get("candidate_id"))
+                        matched_candidates.append({key: candidate.get(key) for key in
+                                                   ("candidate_id", "name", "candidate_kind", "match_score")})
+            cue_statuses = [candidate.get("cue_status") or item["status"]
+                            for candidate, item in zip(candidates_list or [], diagnostics)]
+            if candidate_count == 0 and cue_statuses:
+                status = cue_statuses[-1]
+            self.latest = {
+                "status": "running",
+                "mode": self.mode,
+                "session_id": self.dataset.get("session_id", "demo"),
+                "frame_index": self.cursor + 1,
+                "timestamp_s": timestamp_s,
+                "timestamp": frame.get("timestamp"),
+                "vehicle": ({"lat": lat, "lon": lon, "uncertainty_meters": uncertainty}
+                            if self.has_location_update else None),
+                "observation": {"status": status, "detected": candidate_count > 0,
+                                "cue_text": ", ".join(filter(None, cue_texts)) or None,
+                                "candidate_count": candidate_count,
+                                "matched_candidates": matched_candidates,
+                                "cue_statuses": cue_statuses,
+                                "ambiguous": any(candidate.get("ambiguous", False)
+                                                 for candidate in candidates_list or [])},
+                "diagnostics": {"cue_updates": diagnostics},
+            }
+            self.cursor += 1
+            return self.latest
+
+    def state(self):
+        with self.lock:
+            return self.latest
+
+
+session = LocalizationSession()
+
 
 @app.get("/api/state")
 def get_state():
-    if not frames:
-        return {"status": "completed"}
-    
-    elapsed_real_time = (time.time() - simulation_start_time) * TIME_SCALE
-    total_frames = len(frames)
-    target_index = int(elapsed_real_time // 2)
-    
-    if target_index >= total_frames:
-        target_index = total_frames - 1
-        est_lat, est_lon, uncertainty = pf_engine.get_estimated_state()
-        return {
-            "status": "completed",
-            "timestamp": frames[-1].get("timestamp"),
-            "vehicle": {"lat": est_lat, "lon": est_lon, "uncertainty_meters": uncertainty},
-            "observation": frames[-1].get("observation")
-        }
-    
-    frame = frames[target_index]
-    
-    # Ingest P1, P2, and P3 outputs
-    p1_observation = frame.get("observation", {})
-    p2_osm_response = frame.get("osm_candidates_response", {})
-    
-    # P3 Motion format matching json.dumps output contract
-    p3_motion = frame.get("motion", {
-        "timestamp": round(time.time(), 2),
-        "dx": 0.0,
-        "dy": 0.0,
-        "d_heading": 0.0,
-        "confidence": 0.0
-    })
+    state = dict(session.state())
+    if session.mode == "live":
+        camera = live_runtime.status()
+        state["camera_status"] = camera.get("status")
+        state["camera_index"] = camera.get("camera_index")
+    return state
 
-    # Run particle filter prediction (P3) and update (P1 + P2)
-    pf_engine.predict(p3_motion)
-    pf_engine.update(p1_observation, p2_osm_response)
-    
-    est_lat, est_lon, uncertainty = pf_engine.get_estimated_state()
-    
-    cue_label = p2_osm_response.get("normalized_text", p1_observation.get("text", "None"))
-    candidates_count = len(p2_osm_response.get("candidates", []))
-    
-    return {
-        "status": "running",
-        "timestamp": frame.get("timestamp"),
-        "frame_index": target_index + 1,
-        "vehicle": {
-            "lat": est_lat,
-            "lon": est_lon,
-            "uncertainty_meters": uncertainty
-        },
-        "observation": {
-            "detected": bool(p2_osm_response.get("candidates")),
-            "cue_text": cue_label
-        },
-        "active_candidates_count": candidates_count
-    }
+
+@app.post("/api/advance")
+def advance():
+    try:
+        if session.mode != "replay":
+            raise HTTPException(status_code=409, detail="/api/advance is available for replay sessions only")
+        return session.advance()
+    except (ValueError, KeyError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.post("/api/reset")
+def reset(seed: int = 0):
+    live_runtime.stop()
+    return session.reset(seed)
+
+
+from .live_runtime import LiveCameraRuntime
+
+live_runtime = LiveCameraRuntime(session)
+
+
+@app.post("/api/live/start")
+def start_live(camera_index: int = 0, backend: str = "dshow", device: str = "GPU",
+               interval_s: float = 0.5):
+    if not 0 <= camera_index <= 9:
+        raise HTTPException(status_code=422, detail="camera_index must be an integer from 0 to 9")
+    if backend not in ("dshow", "msmf", "any") or device not in ("GPU", "CPU"):
+        raise HTTPException(status_code=422, detail="Unsupported camera backend or OpenVINO device")
+    if not 0.05 <= interval_s <= 10.0:
+        raise HTTPException(status_code=422, detail="interval_s must be between 0.05 and 10 seconds")
+    try:
+        return live_runtime.start(camera_index=camera_index, backend=backend,
+                                  device=device, interval_s=interval_s)
+    except (RuntimeError, ValueError) as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@app.post("/api/live/stop")
+def stop_live():
+    return live_runtime.stop()
+
+
+@app.get("/api/live/status")
+def live_status():
+    return live_runtime.status()
+
+
+@app.post("/api/replay/start")
+def start_replay():
+    try:
+        live_runtime.stop()
+        return session.begin_replay(load_datastream())
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc

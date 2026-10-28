@@ -16,6 +16,7 @@ English text lines, not isolated handwritten characters.
 
 import argparse
 import json
+import os
 import queue
 import threading
 import time
@@ -35,16 +36,32 @@ MODEL_BASE_URL = (
 MODEL_NAMES = ("horizontal-text-detection-0001", "text-recognition-0014")
 
 
-def download_model(model_name):
+def download_model(model_name, force=False):
     model_dir = MODEL_ROOT / model_name / "FP16"
     model_dir.mkdir(parents=True, exist_ok=True)
     xml_path = model_dir / f"{model_name}.xml"
     bin_path = model_dir / f"{model_name}.bin"
-    for path in (xml_path, bin_path):
-        if not path.is_file():
+    paths = (xml_path, bin_path)
+    if not force and all(path.is_file() and path.stat().st_size > 0 for path in paths):
+        return xml_path
+
+    temporary_paths = []
+    try:
+        for path in paths:
+            temporary = path.with_suffix(path.suffix + ".download")
+            temporary_paths.append(temporary)
             url = f"{MODEL_BASE_URL}/{model_name}/FP16/{path.name}"
             print(f"Downloading {path.name} ...", flush=True)
-            urllib.request.urlretrieve(url, path)
+            urllib.request.urlretrieve(url, temporary)
+            if not temporary.is_file() or temporary.stat().st_size == 0:
+                raise RuntimeError(f"Downloaded model file is empty: {path.name}")
+        # Replace the cached pair only after both downloads complete.
+        for temporary, path in zip(temporary_paths, paths):
+            os.replace(temporary, path)
+    finally:
+        for temporary in temporary_paths:
+            if temporary.exists():
+                temporary.unlink()
     return xml_path
 
 
@@ -145,11 +162,25 @@ class OpenVINOCR:
                 "graphics driver and check OpenVINO GPU support. Available: "
                 f"{self.core.available_devices}"
             )
-        det_xml = download_model(MODEL_NAMES[0])
-        rec_xml = download_model(MODEL_NAMES[1])
+        models = []
+        for model_name in MODEL_NAMES:
+            model_xml = download_model(model_name)
+            try:
+                model = self.core.read_model(model_xml)
+            except RuntimeError as exc:
+                print(f"Cached files for {model_name} are invalid; downloading a fresh XML/BIN pair ...",
+                      flush=True)
+                model_xml = download_model(model_name, force=True)
+                try:
+                    model = self.core.read_model(model_xml)
+                except RuntimeError as retry_exc:
+                    raise RuntimeError(
+                        f"Could not load OpenVINO model {model_name} after a fresh download: {retry_exc}"
+                    ) from exc
+            models.append(model)
         print(f"Compiling OCR models for OpenVINO {device} ...", flush=True)
-        self.detector = self.core.compile_model(self.core.read_model(det_xml), device)
-        self.recognizer = self.core.compile_model(self.core.read_model(rec_xml), device)
+        self.detector = self.core.compile_model(models[0], device)
+        self.recognizer = self.core.compile_model(models[1], device)
         self.det_input = self.detector.input(0)
         self.det_output = self.detector.output("boxes")
         self.rec_input = self.recognizer.input(0)

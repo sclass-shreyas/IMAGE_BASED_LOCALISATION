@@ -39,7 +39,9 @@ Example outputs (placeholder area, not the final corridor): `docs/examples/perso
 }
 ```
 
-Each candidate also has `osm_way_ids`, `bbox` and `segments` (omitted above for space).
+Candidates can be either `candidate_kind: "road"` or `candidate_kind: "building"`.
+Road candidates also have `osm_way_ids`; building candidates have `building_type`.
+Both include `bbox` and, when geometry is requested, `segments` (omitted above for space).
 
 ## Fields
 
@@ -47,11 +49,11 @@ Each candidate also has `osm_way_ids`, `bbox` and `segments` (omitted above for 
 |---|---|
 | `match_score` | Text similarity between the cue and the OSM name, 0 to 1. **Not** the probability that this is the correct place. |
 | `match_type` | `full`: the cue matches the whole street name. `initials`: it matches the initials form (e.g. "MG Road" for "Mahatma Gandhi Road"). |
-| `candidate_id`, `osm_id` | OSM way id of the longest segment of this street piece. |
+| `candidate_id`, `osm_id` | OSM element identifier. Road candidates identify the longest way in the piece; building candidates identify the mapped building feature. |
 | `osm_way_ids` | All OSM way ids in this piece. |
 | `representative_lat/lon` | A point that lies on the road, near the centre of the piece (WGS84 degrees). |
 | `bbox` | `[min_lon, min_lat, max_lon, max_lat]` of the piece. |
-| `segments` | The road geometry: a list of polylines, each a list of `[lat, lon]` pairs. Note the order. Omitted when `include_geometry=False`. |
+| `segments` | Road geometry or building footprint boundaries: a list of polylines, each a list of `[lat, lon]` pairs. Note the order. Omitted when `include_geometry=False`. |
 | `length_m` | Total length of the mapped segments in the piece. |
 | `same_name_pieces` | How many separate pieces share this street name. |
 | `ambiguous` | True when more than one candidate scores within 0.05 of the best. |
@@ -65,3 +67,6 @@ Each candidate also has `osm_way_ids`, `bbox` and `segments` (omitted above for 
 - Treat the candidates of one cue as **alternative explanations of the same observation**, not as independent observations.
 - No candidates (`candidates: []`) means no name scored at or above 0.75, or the text was too short or only generic words (`road`, `cross`, ...). It can also mean OSM lacks that feature, not that OCR failed.
 - Matching uses only OSM data. No GPS is involved.
+- Named building footprints tagged with `building=*` are queried around `AREA_CENTER` and `AREA_RADIUS_M`, cached separately, and matched alongside named roads.
+- `candidate_kind` identifies whether the geometry is a road or a building. Building `representative_lat/lon` lies inside the footprint; its segment geometry follows the footprint boundary.
+- If a visible sign uses wording different from the OSM `name`, add a verified alias to `FEATURE_NAME_ALIASES` in `config.py`; results keep the OSM name and report the alias in `matched_as`.

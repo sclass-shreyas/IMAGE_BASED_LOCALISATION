@@ -103,6 +103,13 @@
             letter-spacing: 0.5px;
         }
 
+        .controls { display: flex; gap: 8px; }
+        .controls button { flex: 1; padding: 9px; border: 1px solid var(--border-color);
+            border-radius: 6px; background: var(--card-bg); color: var(--text-main); cursor: pointer; }
+        .controls button:hover { border-color: var(--accent-blue); }
+        #openvino-device { width: 100%; padding: 8px; border-radius: 6px; background: var(--card-bg);
+            border: 1px solid var(--border-color); color: var(--text-main); }
+
         .metric {
             font-size: 18px;
             font-weight: 700;
@@ -130,9 +137,18 @@
             <h2>P4 Telemetry HUD</h2>
             <div class="live-badge">
                 <div class="pulse-dot"></div>
-                LIVE STREAM
+                <span id="live-status">IDLE</span>
             </div>
         </div>
+
+        <div class="controls">
+            <button id="start-live">Start camera 0</button>
+            <button id="stop-live">Stop</button>
+        </div>
+        <select id="openvino-device" aria-label="OpenVINO device">
+            <option value="GPU">OpenVINO GPU</option>
+            <option value="CPU">OpenVINO CPU</option>
+        </select>
 
         <div class="card" style="border-color: rgba(56, 189, 248, 0.3);">
             <span class="card-label">Active Stream Timestamp</span>
@@ -141,7 +157,7 @@
 
         <div class="card">
             <span class="card-label">Estimated Coordinates</span>
-            <span id="coord-display" class="sub-metric">Acquiring GPS lock...</span>
+            <span id="coord-display" class="sub-metric">Waiting for OCR/OSM cue...</span>
         </div>
 
         <div class="card">
@@ -155,8 +171,8 @@
         </div>
 
         <div class="card">
-            <span class="card-label">Active OSM Candidates Count</span>
-            <span id="candidates-display" class="metric" style="color: var(--accent-blue);">0 nodes</span>
+            <span class="card-label">Candidate Status</span>
+            <span id="candidates-display" class="metric" style="color: var(--accent-blue);">Waiting</span>
         </div>
     </div>
 
@@ -176,25 +192,30 @@
         let vehicleMarker = null;
         let uncertaintyCircle = null;
         let pathLine = L.polyline([], {color: '#38bdf8', weight: 4, opacity: 0.8}).addTo(map);
-        let lastProcessedTimestamp = null;
         let isInitialLoad = true;
 
         async function pollTelemetry() {
             try {
                 let response = await fetch('http://localhost:8000/api/state');
                 let data = await response.json();
-                
-                if (data.status === "completed") {
-                    console.info("Simulation stream finished.");
+                const status = data.camera_status || data.status || "idle";
+                const cameraLabel = data.camera_index !== undefined ? ` · CAM ${data.camera_index}` : "";
+                document.getElementById('live-status').innerText = `${status.toUpperCase()}${cameraLabel}`;
+                let currentTimestamp = `${data.timestamp_s?.toFixed(2) ?? "--"} s`;
+                document.getElementById('timestamp-display').innerText = currentTimestamp;
+                document.getElementById('candidates-display').innerText =
+                    `${data.observation?.status ?? "waiting"} · ${data.observation?.candidate_count ?? 0} candidates`;
+                let cueText = data.observation?.cue_text || "None";
+                const candidateNames = [...new Set((data.observation?.matched_candidates || []).map(item =>
+                    `${item.name}${item.candidate_kind ? ` [${item.candidate_kind}]` : ""}`))];
+                if (candidateNames.length) cueText += ` → ${candidateNames.join(", ")}`;
+                if (data.observation?.ambiguous) cueText += " (ambiguous)";
+                document.getElementById('cue-display').innerText = cueText;
+                if (!data.vehicle) {
+                    document.getElementById('coord-display').innerText = "Awaiting a usable mapped cue...";
+                    document.getElementById('uncertainty-display').innerText = "—";
                     return;
                 }
-
-                let currentTimestamp = data.timestamp;
-
-                if (currentTimestamp === lastProcessedTimestamp) {
-                    return;
-                }
-                lastProcessedTimestamp = currentTimestamp;
 
                 let lat = data.vehicle.lat;
                 let lon = data.vehicle.lon;
@@ -214,16 +235,8 @@
                     isInitialLoad = false;
                 }
 
-                document.getElementById('timestamp-display').innerText = currentTimestamp;
                 document.getElementById('coord-display').innerText = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
                 document.getElementById('uncertainty-display').innerText = `${uncertainty.toFixed(2)} meters`;
-                document.getElementById('candidates-display').innerText = `${data.active_candidates_count || 0} nodes`;
-                
-                let cueText = "None";
-                if (data.observation && data.observation.detected) {
-                    cueText = data.observation.cue_text || "Cluster Matched";
-                }
-                document.getElementById('cue-display').innerText = cueText;
 
                 vehicleMarker.setLatLng(newLatLng);
                 uncertaintyCircle.setLatLng(newLatLng);
@@ -234,11 +247,38 @@
 
             } catch (err) {
                 console.error("Backend connection failed:", err);
+                document.getElementById('live-status').innerText = "API OFFLINE";
             }
         }
 
-        setInterval(pollTelemetry, 400);
-        pollTelemetry();
+        document.getElementById('start-live').addEventListener('click', async () => {
+            try {
+                if (vehicleMarker) map.removeLayer(vehicleMarker);
+                if (uncertaintyCircle) map.removeLayer(uncertaintyCircle);
+                pathLine.setLatLngs([]);
+                vehicleMarker = null;
+                uncertaintyCircle = null;
+                isInitialLoad = true;
+                const device = document.getElementById('openvino-device').value;
+                const response = await fetch(`http://localhost:8000/api/live/start?camera_index=0&device=${device}`, { method: 'POST' });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || "Could not start live camera");
+                document.getElementById('live-status').innerText = data.status.toUpperCase();
+            } catch (err) {
+                document.getElementById('live-status').innerText = "START FAILED";
+                console.error(err);
+            }
+        });
+
+        document.getElementById('stop-live').addEventListener('click', async () => {
+            try {
+                await fetch('http://localhost:8000/api/live/stop', { method: 'POST' });
+                pollTelemetry();
+            } catch (err) { console.error(err); }
+        });
+
+        setInterval(pollTelemetry, 1200);
+        document.getElementById('live-status').innerText = "READY · CAMERA 1";
     </script>
 </body>
 </html>

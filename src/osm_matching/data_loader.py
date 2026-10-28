@@ -10,6 +10,10 @@ def _cache_path():
     return config.OSM_CACHE_DIR / f"{config.AREA_NAME}_roads.gpkg"
 
 
+def _features_cache_path():
+    return config.OSM_CACHE_DIR / f"{config.AREA_NAME}_named_buildings.gpkg"
+
+
 def _to_list(value):
     """OSM attributes can be a single value, a list, or missing. Always return a list of strings."""
     if isinstance(value, list):
@@ -83,6 +87,56 @@ def load_roads(force_download=False):
     roads.to_file(path, driver="GPKG")
     print(f"Saved {len(roads)} rows to {path}")
     return roads
+
+
+def load_named_buildings(force_download=False):
+    """Load named building footprints around the configured campus and cache them."""
+    path = _features_cache_path()
+    if path.exists() and not force_download:
+        return gpd.read_file(path)
+
+    print(f"Downloading named buildings around {config.AREA_CENTER}, radius {config.AREA_RADIUS_M} m ...")
+    features = ox.features_from_point(
+        config.AREA_CENTER,
+        tags={"building": True},
+        dist=config.AREA_RADIUS_M,
+    ).reset_index()
+    rows = []
+    for _, feature in features.iterrows():
+        name = feature.get("name")
+        geom = feature.geometry
+        if not isinstance(name, str) or not name.strip() or geom is None or geom.is_empty:
+            continue
+        if geom.geom_type not in ("Polygon", "MultiPolygon"):
+            continue
+        building_type = feature.get("building")
+        if building_type is None or (isinstance(building_type, str) and not building_type.strip()):
+            continue
+        if not isinstance(building_type, (list, tuple)) and pd.isna(building_type):
+            continue
+        osm_type_value = feature.get("element", feature.get("element_type", "way"))
+        osm_id_value = feature.get("id", feature.get("osmid", feature.get("element_id")))
+        if osm_id_value is None or pd.isna(osm_id_value):
+            continue
+        osm_type = str(osm_type_value)
+        osm_id = str(osm_id_value)
+        rows.append({"name": name.strip(), "osm_type": osm_type, "osm_id": osm_id,
+                     "building_type": str(building_type),
+                     "geometry": geom})
+
+    if rows:
+        buildings = gpd.GeoDataFrame(rows, geometry="geometry", crs=features.crs or "EPSG:4326")
+        projected = buildings.to_crs(buildings.estimate_utm_crs())
+        buildings["length_m"] = projected.geometry.length.astype(float)
+    else:
+        buildings = gpd.GeoDataFrame(
+            {"name": [], "osm_type": [], "osm_id": [], "building_type": [], "length_m": []},
+            geometry=gpd.GeoSeries([], crs="EPSG:4326"), crs="EPSG:4326")
+
+    config.OSM_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    buildings.to_file(path, driver="GPKG")
+    print(f"Saved {len(buildings)} named building footprints to {path}")
+    return buildings
 
 
 def summarize(roads):

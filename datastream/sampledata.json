@@ -2,7 +2,10 @@
   "sequence_metadata": {
     "location": "Cubbon Road, Bengaluru",
     "crs": "EPSG:32643",
-    "description": "Expanded multi-sensor telemetry stream integrating P1 (Vision), P2 (OSM Candidates), and P3 (Motion)"
+    "description": "Legacy synthetic integration fixture only. OCR labels, coordinates, and motion values are hand-authored and are not real sensor/OSM output.",
+    "demo_only": true,
+    "coordinate_area": "Cubbon Road, Bengaluru (does not match current src/osm_matching/config.py RVCE area)",
+    "motion_translation_units": "unknown illustrative values; geographic filter ignores dx/dy"
   },
   "frames": [
     {

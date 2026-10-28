@@ -10,3 +10,5 @@ pyproj
 folium
 networkx
 pytest
+fastapi
+uvicorn
