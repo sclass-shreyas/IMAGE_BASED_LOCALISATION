@@ -5,7 +5,7 @@ from rapidfuzz import process
 from rapidfuzz.distance import Levenshtein
 
 from . import config
-from .normalize import compact_key, name_keys
+from .normalize import compact_key, name_keys, _initials_variant, _tokens_unmerged
 
 MIN_QUERY_LEN = 4  # shorter cues carry too little information to match on
 
@@ -29,7 +29,7 @@ def _core(key):
 class StreetIndex:
     """Index of OSM street names, built once from the roads table."""
 
-    def __init__(self, roads):
+    def __init__(self, roads, include_token_spans=False):
         named = roads[roads["name"].notna()]
         self.name_stats = {
             name: {"segments": int(len(group)), "length_m": round(float(group["length_m"].sum()), 1)}
@@ -39,8 +39,12 @@ class StreetIndex:
         self.key_to_entries = defaultdict(set)
         for name in self.name_stats:
             full = compact_key(name)
-            for key in name_keys(name):
-                kind = "full" if key == full else "initials"
+            initials = _initials_variant(_tokens_unmerged(name))
+            keys = name_keys(name)
+            if not include_token_spans:
+                keys = {full} | ({initials} if initials else set())
+            for key in keys:
+                kind = "full" if key == full else ("initials" if key == initials else "token_span")
                 self.key_to_entries[key].add((name, kind))
                 core = _core(key)
                 if core:

@@ -122,8 +122,10 @@ class LocalizationSession:
                 candidates_list = [frame.get("osm_candidates_response", {})]
             if len(observations) != len(candidates_list or []):
                 raise ValueError("each OCR observation must have exactly one OSM candidate response")
-            diagnostics = [self.filter.update(observation, candidates)
-                           for observation, candidates in zip(observations, candidates_list or [])]
+            observation_pairs = list(zip(observations, candidates_list or []))
+            diagnostics = [self.filter.update(observation, candidates,
+                                              resample=(index == len(observation_pairs) - 1))
+                           for index, (observation, candidates) in enumerate(observation_pairs)]
             if not diagnostics:
                 diagnostics = [self.filter.update({}, {})]
             if any(item["status"] in ("matched", "ambiguous_used") for item in diagnostics):

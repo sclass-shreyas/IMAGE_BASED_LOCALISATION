@@ -106,12 +106,24 @@ def _initials_variant(tokens):
 
 
 def name_keys(name):
-    """All compact keys an OSM street name should be findable by (empty set if unusable)."""
+    """Compact keys an OSM name should be findable by, including meaningful word spans."""
     normalized = normalize_text(name)
     if not normalized:
         return set()
     keys = {normalized.replace(" ", "")}
-    variant = _initials_variant(_tokens_unmerged(name))
+    tokens = _tokens_unmerged(name)
+    # Index contiguous subphrases too: OCR may see only the distinctive part of
+    # a mapped name ("Library" on a building mapped as "New Library").
+    generic = ROAD_TYPES | {"building", "department", "block", "hostel", "center", "centre"}
+    for start in range(len(tokens)):
+        for end in range(start + 1, len(tokens) + 1):
+            span = tokens[start:end]
+            if any(token in generic for token in span):
+                continue
+            key = "".join(span)
+            if len(key) >= 4:
+                keys.add(key)
+    variant = _initials_variant(tokens)
     if variant:
         keys.add(variant)
     return keys

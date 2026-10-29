@@ -97,7 +97,7 @@ class ParticleFilterEngine:
             result[offset:offset + len(chunk)] = np.linalg.norm(chunk[:, None, :] - nearest, axis=2).min(axis=1)
         return result
 
-    def update(self, observation, candidates_response):
+    def update(self, observation, candidates_response, resample=True):
         self._did_resample = False
         observation = observation or {}
         candidates_response = candidates_response or {}
@@ -142,7 +142,7 @@ class ParticleFilterEngine:
             return self.last_diagnostics
         self.weights = updated / total
         ess = self.effective_sample_size
-        if ess < 0.5 * self.num_particles:
+        if resample and ess < 0.5 * self.num_particles:
             self._resample()
             ess = self.effective_sample_size
         self.last_diagnostics = {"status": "ambiguous_used" if candidates_response.get("ambiguous") else "matched",

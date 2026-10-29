@@ -104,7 +104,7 @@ class CandidateGenerator:
                         feature_rows.append({"name": alias, "length_m": feature["length_m"],
                                              "geometry": feature.geometry})
             index_data = gpd.GeoDataFrame(feature_rows, geometry="geometry", crs=buildings.crs)
-            self.building_index = StreetIndex(index_data)
+            self.building_index = StreetIndex(index_data, include_token_spans=True)
 
     def match_cue(self, cue, include_geometry=True):
         """cue: dict with timestamp_s, cue_type, text, ocr_confidence, bbox_xywh (the brief's format).

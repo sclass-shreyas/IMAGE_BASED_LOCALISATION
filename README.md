@@ -51,6 +51,20 @@ also lets the browser send the referrer required by the OpenStreetMap tile serve
 and estimate. Stop the camera with the UI button or `POST /api/live/stop`. Do not run
 the standalone OCR program at the same time, since it would contend for the selected camera.
 
+Live OCR filtering sends detections with confidence `0.25` or higher through OSM
+matching. Before matching, detected words are grouped by image line and every
+contiguous, left-to-right word span is searched (for example, `mm`, `foods`,
+`mm foods`, `foods aos`, and `mm foods aos`). Building names are also indexed by
+meaningful contiguous word spans, so OCR `library` can match the OSM feature `New
+Library`. Distinct matched OSM features from one image update the filter together;
+overlapping phrase combinations for the same feature count once. Resampling is
+deferred until all same-frame observations have updated the particle weights.
+Generic standalone words are still discarded. Detections below `0.45`
+confidence update the filter only when the OSM match is unambiguous and scores at
+least `0.90`, or when the same likely feature is found in at least two of the last
+three OCR samples. A continuously repeated low-confidence cue is applied once while
+it remains visible, limiting repeated evidence from the same sign.
+
 The filter uses OCR-to-OSM road candidates as absolute map observations. Optical-flow
 `dx_px`/`dy_px` are retained as relative image measurements and are never converted
 to metres; image rotation is not assumed to be vehicle yaw. This means the current
