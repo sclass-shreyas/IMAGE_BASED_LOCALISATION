@@ -1,3 +1,12 @@
 openvino
 opencv-python
 numpy
+
+osmnx
+rapidfuzz
+shapely
+geopandas
+pyproj
+folium
+networkx
+pytest
