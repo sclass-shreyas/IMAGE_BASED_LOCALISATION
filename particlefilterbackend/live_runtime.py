@@ -2,6 +2,7 @@
 from datetime import datetime, timezone
 from collections import deque
 from threading import Event, Lock, Thread
+import json
 import time
 import math
 import re
@@ -14,6 +15,11 @@ STRONG_OSM_MATCH_THRESHOLD = 0.90
 NORMAL_OSM_MATCH_THRESHOLD = 0.82
 LOW_CONFIDENCE_HISTORY_FRAMES = 3
 LOW_CONFIDENCE_REQUIRED_HITS = 2
+
+# Phase 3 visual odometry defaults (can be tuned per camera)
+DEFAULT_PIXEL_TO_METER_SCALE = 0.05
+MIN_PIXEL_TO_METER_SCALE = 0.001
+MAX_PIXEL_TO_METER_SCALE = 2.0
 
 
 def _generate_phrase_cues(detections, timestamp_s, frame_id):
@@ -219,6 +225,16 @@ class LiveCameraRuntime:
             active_low_confidence_matches = set()
             campus_generic_terms = {"building", "department", "block", "hostel", "laboratory",
                                     "lab", "center", "centre", "engineering"}
+
+            # --- PHASE 3: MOTION TRACKING & AUTO-CALIBRATION STATE ---
+            pixel_to_meter_scale = DEFAULT_PIXEL_TO_METER_SCALE
+            accumulated_pixels = 0.0
+            interval_dx = 0.0
+            interval_dy = 0.0
+            last_anchor_lat = None
+            last_anchor_lon = None
+            # ---------------------------------------------------------
+
             with self._lock:
                 self._status.update(status="running", camera_index=selected_index,
                                     started_utc=datetime.now(timezone.utc).isoformat())
@@ -230,6 +246,22 @@ class LiveCameraRuntime:
                 frame_id += 1
                 timestamp_s = time.perf_counter() - started
                 motion = estimator.process_frame(frame, timestamp_s, frame_id)
+
+                # --- PHASE 3: ACCUMULATE MOTION ON EVERY FRAME ---
+                if motion:
+                    try:
+                        motion_data = json.loads(motion) if isinstance(motion, str) else motion
+                        if isinstance(motion_data, dict):
+                            dx = float(motion_data.get("dx", 0.0))
+                            dy = float(motion_data.get("dy", 0.0))
+                            if math.isfinite(dx) and math.isfinite(dy):
+                                interval_dx += dx
+                                interval_dy += dy
+                                accumulated_pixels += math.hypot(dx, dy)
+                    except Exception:
+                        pass
+                # -------------------------------------------------
+
                 if timestamp_s - last_ocr < interval_s:
                     continue
                 last_ocr = timestamp_s
@@ -346,10 +378,47 @@ class LiveCameraRuntime:
                 # detections; phrase combinations are used only for OSM queries.
                 self._publish_preview(frame, detections, preview_responses)
 
+                # --- PHASE 3: CONVERT TO METERS & AUTO-CALIBRATE ---
+                calculated_route_delta = None
+                if interval_dx != 0.0 or interval_dy != 0.0:
+                    calculated_route_delta = [
+                        interval_dx * pixel_to_meter_scale,
+                        -interval_dy * pixel_to_meter_scale,
+                    ]
+                    interval_dx = 0.0
+                    interval_dy = 0.0
+
+                strong_matches = [
+                    item for item in selected
+                    if item["response"].get("cue_status") in {
+                        "street_name_candidate", "low_confidence_strong_match"
+                    }
+                ]
+                if strong_matches and strong_matches[0]["response"].get("candidates"):
+                    top_candidate = strong_matches[0]["response"]["candidates"][0]
+                    current_lat = top_candidate.get("representative_lat")
+                    current_lon = top_candidate.get("representative_lon")
+
+                    if current_lat is not None and current_lon is not None:
+                        current_lat, current_lon = float(current_lat), float(current_lon)
+                        if last_anchor_lat is not None and accumulated_pixels > 50.0:
+                            d_lat_m = (current_lat - last_anchor_lat) * 111000.0
+                            d_lon_m = (current_lon - last_anchor_lon) * 111000.0 * math.cos(math.radians(last_anchor_lat))
+                            geo_distance_m = math.hypot(d_lat_m, d_lon_m)
+                            if geo_distance_m > 2.0:
+                                new_scale = geo_distance_m / accumulated_pixels
+                                if MIN_PIXEL_TO_METER_SCALE <= new_scale <= MAX_PIXEL_TO_METER_SCALE:
+                                    pixel_to_meter_scale = (pixel_to_meter_scale * 0.8) + (new_scale * 0.2)
+
+                        last_anchor_lat = current_lat
+                        last_anchor_lon = current_lon
+                        accumulated_pixels = 0.0
+                # ---------------------------------------------------
+
                 frame_packet = {"frame_id": frame_id, "timestamp_s": timestamp_s,
                                 "observations": observations,
                                 "osm_candidates_responses": candidate_responses,
-                                "motion": motion, "route_delta_m": None}
+                                "motion": motion, "route_delta_m": calculated_route_delta}
                 latest = self.session.ingest_live(frame_packet)
                 with self._lock:
                     self._status.update(status="running", frame_id=frame_id,
