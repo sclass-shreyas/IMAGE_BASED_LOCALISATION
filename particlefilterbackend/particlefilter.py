@@ -9,9 +9,15 @@ class ParticleFilterEngine:
                  area_radius_m=None, seed=0, sigma_m=20.0, min_ocr_confidence=0.25):
         from src.osm_matching import config
 
+        configured_position = config.INITIAL_POSITION
+        if initial_lat is None and initial_lon is None and configured_position is not None:
+            initial_lat, initial_lon = configured_position
+            if area_radius_m is None:
+                area_radius_m = config.INITIAL_POSITION_UNCERTAINTY_M
         initial_lat = config.AREA_CENTER[0] if initial_lat is None else initial_lat
         initial_lon = config.AREA_CENTER[1] if initial_lon is None else initial_lon
         area_radius_m = config.AREA_RADIUS_M if area_radius_m is None else area_radius_m
+        self.initial_heading_deg = config.INITIAL_HEADING_DEG_FROM_EAST
         self.num_particles = int(num_particles)
         self.rng = np.random.default_rng(seed)
         self.origin_lat, self.origin_lon = float(initial_lat), float(initial_lon)
@@ -34,21 +40,45 @@ class ParticleFilterEngine:
         east, north = radius * np.cos(angle), radius * np.sin(angle)
         self.particles[:, 0] = self.origin_lat + north / 111_000.0
         self.particles[:, 1] = self.origin_lon + east / (111_000.0 * np.cos(np.radians(self.origin_lat)))
-        self.particles[:, 2] = self.rng.uniform(-np.pi, np.pi, self.num_particles)
+        if self.initial_heading_deg is None:
+            self.particles[:, 2] = self.rng.uniform(-np.pi, np.pi, self.num_particles)
+        else:
+            heading = np.radians(float(self.initial_heading_deg))
+            self.particles[:, 2] = self.rng.normal(heading, np.radians(10.0), self.num_particles)
         self.weights.fill(1.0 / self.num_particles)
         self.last_timestamp_s = None
         self.last_diagnostics = {"status": "reset", "effective_sample_size": float(self.num_particles)}
 
     def predict(self, motion=None, dt=0.0, route_delta_m=None):
-        """Predict using explicit route/simulator metres; ignore visual pixel dx/dy."""
+        """Predict from route deltas or calibrated local-frame visual odometry.
+
+        Particle heading is radians counter-clockwise from east. Metric VO reports
+        right/forward camera translation in metres; uncalibrated pixel flow is ignored.
+        """
         motion = motion or {}
         dt = max(0.0, float(dt))
         if route_delta_m is not None:
             east_m, north_m = map(float, route_delta_m)
             self.particles[:, 0] += north_m / 111_000.0
             self.particles[:, 1] += east_m / (111_000.0 * np.cos(np.radians(self.particles[:, 0])))
-        # Image-derived rotation is also relative camera motion, not a calibrated
-        # vehicle yaw measurement; preserve it in the event but don't apply it here.
+        elif motion.get("motion_type") == "metric_ground_plane_vo" and motion.get("status") == "ok":
+            confidence = float(np.clip(motion.get("confidence", 0.0), 0.0, 1.0))
+            right_m = float(motion.get("right_delta_m", 0.0))
+            forward_m = float(motion.get("forward_delta_m", 0.0))
+            yaw_delta = float(motion.get("yaw_delta_rad", 0.0))
+            # Inflate per-particle motion noise when tracking has fewer inliers.
+            distance_sigma = 0.02 + 0.15 * (1.0 - confidence)
+            right = right_m + self.rng.normal(0.0, distance_sigma, self.num_particles)
+            forward = forward_m + self.rng.normal(0.0, distance_sigma, self.num_particles)
+            heading = self.particles[:, 2]
+            east = forward * np.cos(heading) + right * np.sin(heading)
+            north = forward * np.sin(heading) - right * np.cos(heading)
+            self.particles[:, 0] += north / 111_000.0
+            self.particles[:, 1] += east / (111_000.0 * np.cos(np.radians(self.particles[:, 0])))
+            self.particles[:, 2] += yaw_delta + self.rng.normal(
+                0.0, 0.005 + 0.04 * (1.0 - confidence), self.num_particles)
+
+        # Pixel-space dx/dy and affine rotation are intentionally ignored.
         self.particles[:, 0] += self.rng.normal(0, 0.25 * np.sqrt(dt) / 111_000.0, self.num_particles)
         self.particles[:, 1] += self.rng.normal(0, 0.25 * np.sqrt(dt) /
                                                 (111_000.0 * np.cos(np.radians(self.particles[:, 0]))),

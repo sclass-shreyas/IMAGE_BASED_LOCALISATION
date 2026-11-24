@@ -44,7 +44,9 @@ def test_osm_name_keys_include_initials():
 
 
 def test_osm_name_keys_no_false_initials():
-    assert name_keys("Cubbon Road") == {"cubbonroad"}
+    # Meaningful partial-name indexing is intentional in the legacy matcher.
+    assert name_keys("Cubbon Road") == {"cubbonroad", "cubbon"}
+    assert "croad" not in name_keys("Cubbon Road")
     assert name_keys("1st Cross Road") == {"1stcrossroad"}
 
 

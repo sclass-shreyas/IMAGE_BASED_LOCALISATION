@@ -7,11 +7,19 @@ OSM_CACHE_DIR = PROJECT_ROOT / "data" / "osm"
 
 # ---- TEST AREA: RV College of Engineering, Bengaluru ---------------------
 # Starting point from Wikipedia; replace with the middle of the campus from Google Maps if it differs.
-AREA_CENTER = (12.923760000292681, 77.49968865500958)   # (lat, lon)
+AREA_CENTER = (12.876952,77.53437)   # (lat, lon)
 AREA_RADIUS_M = 1000               # campus plus the surrounding roads (e.g. Mysore Road)
+# Optional manually known starting point (latitude, longitude). This is a
+# prototype initialization input, not a live GNSS measurement. None keeps the
+# broad prior centered on AREA_CENTER.
+INITIAL_POSITION = None
+INITIAL_POSITION_UNCERTAINTY_M = 5.0
+# Optional initial vehicle heading for a manually initialized odometry run.
+# Degrees counter-clockwise from east; leave None while no heading is known.
+INITIAL_HEADING_DEG_FROM_EAST = None
 
 # Name used in the cache filename, so different areas don't overwrite each other
-AREA_NAME = "rvce_v1"
+AREA_NAME = "vajrahlli"
 # -------------------------------------------------------------------------
 
 # Matching settings

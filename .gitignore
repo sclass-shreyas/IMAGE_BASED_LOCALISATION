@@ -9,4 +9,8 @@ openvino_webcam.json
 
 .pytest_cache/
 data/osm/*.gpkg
+data/osm/*.graphml
+ground_points*.json
+ground_points*.png
+visual_odometry_calibration*.json
 /cache/

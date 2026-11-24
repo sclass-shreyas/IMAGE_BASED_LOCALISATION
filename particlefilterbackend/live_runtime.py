@@ -6,6 +6,7 @@ import time
 import math
 import re
 import uuid
+import os
 
 
 MIN_LIVE_OCR_CONFIDENCE = 0.25
@@ -190,6 +191,7 @@ class LiveCameraRuntime:
     def _run(self, session_id, camera_index, backend, device, interval_s):
         capture = None
         try:
+            import numpy as np
             # Imports are delayed so the API can start and report errors before a
             # webcam or OpenVINO device is available.
             from openvino_webcam_test import BufferlessCapture, OpenVINOCR, open_camera
@@ -211,10 +213,19 @@ class LiveCameraRuntime:
                 raise RuntimeError(f"Could not open any camera at indices {requested_indices} via {backend}")
             capture = BufferlessCapture(camera)
             matcher = CandidateGenerator()
-            estimator = MotionEstimator()
+            calibration_path = os.environ.get("VISUAL_ODOMETRY_CALIBRATION")
+            if calibration_path:
+                from visual_odometry import GroundPlaneVisualOdometry
+                estimator = GroundPlaneVisualOdometry(calibration_path)
+            else:
+                # This legacy estimator reports pixels only; the geographic
+                # particle filter intentionally does not interpret those as metres.
+                estimator = MotionEstimator()
             started = time.perf_counter()
             last_ocr = -interval_s
             frame_id = 0
+            metric_motion_sum = np.zeros(3, dtype=float)
+            metric_motion_confidence = []
             recent_match_frames = deque(maxlen=LOW_CONFIDENCE_HISTORY_FRAMES)
             active_low_confidence_matches = set()
             campus_generic_terms = {"building", "department", "block", "hostel", "laboratory",
@@ -230,9 +241,27 @@ class LiveCameraRuntime:
                 frame_id += 1
                 timestamp_s = time.perf_counter() - started
                 motion = estimator.process_frame(frame, timestamp_s, frame_id)
+                if motion.get("motion_type") == "metric_ground_plane_vo" and motion.get("status") == "ok":
+                    # Compose into the camera frame at the start of this interval.
+                    yaw = metric_motion_sum[2]
+                    right, forward = motion["right_delta_m"], motion["forward_delta_m"]
+                    metric_motion_sum[0] += right * math.cos(yaw) - forward * math.sin(yaw)
+                    metric_motion_sum[1] += right * math.sin(yaw) + forward * math.cos(yaw)
+                    metric_motion_sum[2] += motion["yaw_delta_rad"]
+                    metric_motion_confidence.append(float(motion.get("confidence", 0.0)))
                 if timestamp_s - last_ocr < interval_s:
                     continue
                 last_ocr = timestamp_s
+                if motion.get("motion_type") == "metric_ground_plane_vo":
+                    motion = {**motion,
+                              "right_delta_m": float(metric_motion_sum[0]),
+                              "forward_delta_m": float(metric_motion_sum[1]),
+                              "yaw_delta_rad": float(metric_motion_sum[2]),
+                              "confidence": (sum(metric_motion_confidence) / len(metric_motion_confidence)
+                                             if metric_motion_confidence else 0.0),
+                              "status": "ok" if metric_motion_confidence else motion.get("status")}
+                    metric_motion_sum.fill(0.0)
+                    metric_motion_confidence.clear()
                 detections = ocr.recognize(frame)
                 phrase_cues = _generate_phrase_cues(detections, timestamp_s, frame_id)
                 records = []

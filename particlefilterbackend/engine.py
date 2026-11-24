@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 from threading import RLock
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,7 +11,14 @@ from fastapi.staticfiles import StaticFiles
 
 from .particlefilter import ParticleFilterEngine
 
-app = FastAPI(title="Integrated Telemetry Localization Engine")
+@asynccontextmanager
+async def lifespan(app):
+    yield
+    motion_runtime.stop()
+    live_runtime.stop()
+
+
+app = FastAPI(title="Integrated Telemetry Localization Engine", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True,
                    allow_methods=["*"], allow_headers=["*"])
 
@@ -219,6 +227,7 @@ def start_live(camera_index: int = 0, backend: str = "dshow", device: str = "GPU
     if not 0.05 <= interval_s <= 10.0:
         raise HTTPException(status_code=422, detail="interval_s must be between 0.05 and 10 seconds")
     try:
+        motion_runtime.stop()
         return live_runtime.start(camera_index=camera_index, backend=backend,
                                   device=device, interval_s=interval_s)
     except (RuntimeError, ValueError) as exc:
@@ -255,4 +264,8 @@ def start_replay():
 
 # Serve the UI from the same localhost origin as the API. This gives browser
 # map tile requests a normal HTTP Referer instead of a file:// origin.
+from .motion_api import router as motion_router, runtime as motion_runtime
+app.include_router(motion_router)
+
+
 app.mount("/", StaticFiles(directory=BASE_DIR / "particlefilterfrontend", html=True), name="frontend")
